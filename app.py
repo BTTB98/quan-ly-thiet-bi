@@ -109,7 +109,7 @@ def logout():
 
 
 # ==========================================
-# QUẢN LÝ ĐƠN MUA HÀNG (PURCHASES)
+# QUẢN LÝ ĐƠN MUA HÀNG (PURCHASES & TÌM KIẾM)
 # ==========================================
 
 @app.route('/purchases')
@@ -117,14 +117,31 @@ def list_purchases():
   if 'user_id' not in session:
     return redirect(url_for('login'))
 
+  # Lấy từ khóa tìm kiếm từ thanh URL (nếu có)
+  search_query = request.args.get('q', '').strip()
+
   conn = sqlite3.connect('database.db')
   conn.row_factory = sqlite3.Row
   cursor = conn.cursor()
-  cursor.execute('SELECT * FROM purchases ORDER BY id DESC')
+
+  if search_query:
+    # Tìm kiếm gần đúng theo item_code hoặc item_name
+    query = """
+            SELECT * FROM purchases 
+            WHERE item_code LIKE ? OR item_name LIKE ? 
+            ORDER BY id DESC
+        """
+    like_pattern = f'%{search_query}%'
+    cursor.execute(query, (like_pattern, like_pattern))
+  else:
+    cursor.execute('SELECT * FROM purchases ORDER BY id DESC')
+
   purchases = cursor.fetchall()
   conn.close()
 
-  return render_template('purchases.html', purchases=purchases)
+  return render_template(
+      'purchases.html', purchases=purchases, search_query=search_query
+  )
 
 
 @app.route('/purchases/add', methods=['GET', 'POST'])

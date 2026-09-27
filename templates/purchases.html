@@ -7,11 +7,24 @@
 </head>
 <body class="container mt-4">
     <h2>Danh sách Đơn Mua Hàng Vật Tư</h2>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary mb-3">Quay lại trang chủ</a>
+    
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Quay lại trang chủ</a>
+            {% if session.get('role') == 'admin' %}
+                <a href="{{ url_for('add_purchase') }}" class="btn btn-primary">+ Thêm đơn mua hàng mới</a>
+            {% endif %}
+        </div>
 
-    {% if session.get('role') == 'admin' %}
-        <a href="{{ url_for('add_purchase') }}" class="btn btn-primary mb-3">+ Thêm đơn mua hàng mới</a>
-    {% endif %}
+        <!-- Form tìm kiếm theo Mã hoặc Tên vật tư -->
+        <form method="GET" action="{{ url_for('list_purchases') }}" class="d-flex" style="width: 350px;">
+            <input type="text" name="q" class="form-control me-2" placeholder="Nhập mã hoặc tên vật tư..." value="{{ search_query }}">
+            <button type="submit" class="btn btn-outline-primary">Tìm</button>
+            {% if search_query %}
+                <a href="{{ url_for('list_purchases') }}" class="btn btn-outline-secondary ms-1">Hủy</a>
+            {% endif %}
+        </form>
+    </div>
 
     <div class="table-responsive">
         <table class="table table-bordered table-striped text-center align-middle">
@@ -55,7 +68,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="12" class="text-muted">Chưa có đơn mua hàng nào.</td>
+                    <td colspan="12" class="text-muted">Không tìm thấy đơn mua hàng nào phù hợp.</td>
                 </tr>
                 {% endfor %}
             </tbody>

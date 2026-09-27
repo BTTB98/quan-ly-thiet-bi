@@ -1,5 +1,6 @@
 from datetime import datetime
 import io
+import os
 import sqlite3
 from flask import (
     Flask,
@@ -18,9 +19,14 @@ app = Flask(__name__)
 app.secret_key = 'khoa_bi_mat_sieu_an_toan'
 
 
+# --- CỐ ĐỊNH ĐƯỜNG DẪN CƠ SỞ DỮ LIỆU ĐỂ KHÔNG BỊ MẤT DỮ LIỆU KHI TẮT MÁY ---
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+DB_PATH = os.path.join(BASE_DIR, 'database.db')
+
+
 # --- KHỞI TẠO CƠ SỞ DỮ LIỆU ---
 def init_db():
-  conn = sqlite3.connect('database.db')
+  conn = sqlite3.connect(DB_PATH)
   cursor = conn.cursor()
 
   # 1. Bảng người dùng (Users)
@@ -53,11 +59,11 @@ def init_db():
         )
     ''')
 
-  # Tự động thêm cột evaluation nếu cơ sở dữ liệu cũ chưa có
-  cursor.execute("PRAGMA table_info(purchases)")
+  # Tự động bổ sung cột evaluation nếu database cũ chưa có
+  cursor.execute('PRAGMA table_info(purchases)')
   columns = [column[1] for column in cursor.fetchall()]
   if 'evaluation' not in columns:
-    cursor.execute("ALTER TABLE purchases ADD COLUMN evaluation TEXT")
+    cursor.execute('ALTER TABLE purchases ADD COLUMN evaluation TEXT')
 
   # Tạo tài khoản Admin mặc định nếu chưa có
   cursor.execute('SELECT * FROM users WHERE username = ?', ('admin',))
@@ -90,7 +96,7 @@ def login():
     username = request.form['username']
     password = request.form['password']
 
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
@@ -118,7 +124,7 @@ def logout():
 
 
 # ==========================================
-# QUẢN LÝ ĐƠN MUA HÀNG, TÌM KIẾM, LỌC TRẠNG THÁI & XUẤT EXCEL
+# QUẢN LÝ ĐƠN MUA HÀNG, TÌM KIẾM, LỌC & EXCEL
 # ==========================================
 
 @app.route('/purchases')
@@ -129,7 +135,7 @@ def list_purchases():
   search_query = request.args.get('q', '').strip()
   status_filter = request.args.get('status', '').strip()
 
-  conn = sqlite3.connect('database.db')
+  conn = sqlite3.connect(DB_PATH)
   conn.row_factory = sqlite3.Row
   cursor = conn.cursor()
 
@@ -167,10 +173,11 @@ def export_purchases_excel():
   if 'user_id' not in session:
     return redirect(url_for('login'))
 
-  conn = sqlite3.connect('database.db')
+  conn = sqlite3.connect(DB_PATH)
   df = pd.read_sql_query('SELECT * FROM purchases ORDER BY id DESC', conn)
   conn.close()
 
+  # Đổi tên các cột sang tiếng Việt khi xuất Excel
   df = df.rename(
       columns={
           'id': 'ID',
@@ -227,10 +234,11 @@ def add_purchase():
     status = request.form['status']
     evaluation = request.form.get('evaluation', 'Chưa')
 
+    # Tự động cập nhật trạng thái thành "Đã nhận" nếu điền ngày nhận thực tế
     if received_date and received_date.strip() != '':
       status = 'Đã nhận'
 
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute(
         """
@@ -268,7 +276,7 @@ def edit_purchase(id):
     flash('Bạn không có quyền chỉnh sửa đơn hàng này!', 'danger')
     return redirect(url_for('list_purchases'))
 
-  conn = sqlite3.connect('database.db')
+  conn = sqlite3.connect(DB_PATH)
   conn.row_factory = sqlite3.Row
   cursor = conn.cursor()
 
@@ -337,7 +345,7 @@ def list_users():
     flash('Bạn không có quyền truy cập trang này!', 'danger')
     return redirect(url_for('index'))
 
-  conn = sqlite3.connect('database.db')
+  conn = sqlite3.connect(DB_PATH)
   conn.row_factory = sqlite3.Row
   cursor = conn.cursor()
   cursor.execute('SELECT id, username, role FROM users')
@@ -361,7 +369,7 @@ def add_user():
     hashed_pw = generate_password_hash(password)
 
     try:
-      conn = sqlite3.connect('database.db')
+      conn = sqlite3.connect(DB_PATH)
       cursor = conn.cursor()
       cursor.execute(
           'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',

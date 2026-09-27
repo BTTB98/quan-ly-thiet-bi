@@ -48,9 +48,16 @@ def init_db():
             order_date TEXT,
             expected_date TEXT,
             status TEXT,
-            received_date TEXT
+            received_date TEXT,
+            evaluation TEXT
         )
     ''')
+
+  # Tự động thêm cột evaluation nếu cơ sở dữ liệu cũ chưa có
+  cursor.execute("PRAGMA table_info(purchases)")
+  columns = [column[1] for column in cursor.fetchall()]
+  if 'evaluation' not in columns:
+    cursor.execute("ALTER TABLE purchases ADD COLUMN evaluation TEXT")
 
   # Tạo tài khoản Admin mặc định nếu chưa có
   cursor.execute('SELECT * FROM users WHERE username = ?', ('admin',))
@@ -126,7 +133,6 @@ def list_purchases():
   conn.row_factory = sqlite3.Row
   cursor = conn.cursor()
 
-  # Xây dựng câu truy vấn động linh hoạt theo từ khóa và trạng thái
   query = 'SELECT * FROM purchases WHERE 1=1'
   params = []
 
@@ -180,6 +186,7 @@ def export_purchases_excel():
           'expected_date': 'Dự kiến nhận',
           'status': 'Trạng thái',
           'received_date': 'Ngày nhận thực tế',
+          'evaluation': 'Đánh giá vật tư',
       }
   )
 
@@ -218,6 +225,7 @@ def add_purchase():
 
     received_date = request.form.get('received_date')
     status = request.form['status']
+    evaluation = request.form.get('evaluation', 'Chưa')
 
     if received_date and received_date.strip() != '':
       status = 'Đã nhận'
@@ -226,8 +234,8 @@ def add_purchase():
     cursor = conn.cursor()
     cursor.execute(
         """
-            INSERT INTO purchases (cost_code, item_code, item_name, po_number, supplier, quantity, unit_price, total_price, order_date, expected_date, status, received_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO purchases (cost_code, item_code, item_name, po_number, supplier, quantity, unit_price, total_price, order_date, expected_date, status, received_date, evaluation)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             cost_code,
@@ -242,6 +250,7 @@ def add_purchase():
             expected_date,
             status,
             received_date,
+            evaluation,
         ),
     )
     conn.commit()
@@ -277,6 +286,7 @@ def edit_purchase(id):
 
     received_date = request.form.get('received_date')
     status = request.form['status']
+    evaluation = request.form.get('evaluation', 'Chưa')
 
     if received_date and received_date.strip() != '':
       status = 'Đã nhận'
@@ -284,7 +294,7 @@ def edit_purchase(id):
     cursor.execute(
         """
             UPDATE purchases 
-            SET cost_code=?, item_code=?, item_name=?, po_number=?, supplier=?, quantity=?, unit_price=?, total_price=?, order_date=?, expected_date=?, status=?, received_date=?
+            SET cost_code=?, item_code=?, item_name=?, po_number=?, supplier=?, quantity=?, unit_price=?, total_price=?, order_date=?, expected_date=?, status=?, received_date=?, evaluation=?
             WHERE id=?
         """,
         (
@@ -300,6 +310,7 @@ def edit_purchase(id):
             expected_date,
             status,
             received_date,
+            evaluation,
             id,
         ),
     )

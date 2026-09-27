@@ -2,21 +2,30 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Hệ thống Quản lý</title>
+    <title>Trang chủ - Hệ thống Quản lý</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
 <body class="container mt-5">
+    <!-- Header thông tin người dùng và nút đăng xuất -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Xin chào, {{ session['username'] }} (Vai trò: <strong>{{ session['role'] }}</strong>)</h2>
         <a href="{{ url_for('logout') }}" class="btn btn-danger">Đăng xuất</a>
     </div>
+    
     <hr>
+
+    <!-- Danh sách các chức năng hệ thống -->
     <div class="list-group">
-        <a href="{{ url_for('list_purchases') }}" class="list-group-item list-group-item-action mb-2">📦 Quản lý đơn mua hàng vật tư</a>
+        <!-- Chức năng quản lý mua hàng (Ai đăng nhập cũng thấy) -->
+        <a href="{{ url_for('list_purchases') }}" class="list-group-item list-group-item-action mb-2">
+            📦 Quản lý đơn mua hàng vật tư
+        </a>
         
-        <!-- Chỉ Admin mới nhìn thấy mục Quản lý tài khoản -->
+        <!-- Chức năng quản lý tài khoản (Chỉ tài khoản admin mới nhìn thấy) -->
         {% if session.get('role') == 'admin' %}
-            <a href="{{ url_for('list_users') }}" class="list-group-item list-group-item-action">👥 Quản lý tài khoản nhân viên</a>
+            <a href="{{ url_for('list_users') }}" class="list-group-item list-group-item-action">
+                👥 Quản lý tài khoản nhân viên
+            </a>
         {% endif %}
     </div>
 </body>

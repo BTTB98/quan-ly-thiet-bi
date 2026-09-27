@@ -12,7 +12,12 @@
     </div>
     <hr>
     <div class="list-group">
-        <a href="{{ url_for('list_purchases') }}" class="list-group-item list-group-item-action">📦 Quản lý đơn mua hàng vật tư</a>
+        <a href="{{ url_for('list_purchases') }}" class="list-group-item list-group-item-action mb-2">📦 Quản lý đơn mua hàng vật tư</a>
+        
+        <!-- Chỉ Admin mới nhìn thấy mục Quản lý tài khoản -->
+        {% if session.get('role') == 'admin' %}
+            <a href="{{ url_for('list_users') }}" class="list-group-item list-group-item-action">👥 Quản lý tài khoản nhân viên</a>
+        {% endif %}
     </div>
 </body>
 </html>

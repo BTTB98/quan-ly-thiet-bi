@@ -16,9 +16,8 @@
             {% endif %}
         </div>
 
-        <!-- Form tìm kiếm theo Mã hoặc Tên vật tư -->
-        <form method="GET" action="{{ url_for('list_purchases') }}" class="d-flex" style="width: 350px;">
-            <input type="text" name="q" class="form-control me-2" placeholder="Nhập mã hoặc tên vật tư..." value="{{ search_query }}">
+        <form method="GET" action="{{ url_for('list_purchases') }}" class="d-flex" style="width: 380px;">
+            <input type="text" name="q" class="form-control me-2" placeholder="Tìm theo mã chi phí, mã hoặc tên..." value="{{ search_query }}">
             <button type="submit" class="btn btn-outline-primary">Tìm</button>
             {% if search_query %}
                 <a href="{{ url_for('list_purchases') }}" class="btn btn-outline-secondary ms-1">Hủy</a>
@@ -30,6 +29,7 @@
         <table class="table table-bordered table-striped text-center align-middle">
             <thead class="table-dark">
                 <tr>
+                    <th>Mã chi phí</th>
                     <th>Mã vật tư</th>
                     <th>Tên vật tư</th>
                     <th>Số PO</th>
@@ -49,6 +49,7 @@
             <tbody>
                 {% for p in purchases %}
                 <tr>
+                    <td>{{ p.cost_code or 'N/A' }}</td>
                     <td>{{ p.item_code or 'N/A' }}</td>
                     <td>{{ p.item_name }}</td>
                     <td>{{ p.po_number }}</td>
@@ -58,7 +59,13 @@
                     <td><strong>{{ "{:,.0f}".format(p.total_price) }} đ</strong></td>
                     <td>{{ p.order_date }}</td>
                     <td>{{ p.expected_date }}</td>
-                    <td><span class="badge bg-info text-dark">{{ p.status }}</span></td>
+                    <td>
+                        {% if p.status == 'Đã nhận' %}
+                            <span class="badge bg-success">Đã nhận</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">{{ p.status }}</span>
+                        {% endif %}
+                    </td>
                     <td>{{ p.received_date or 'Chưa nhận' }}</td>
                     {% if session.get('role') == 'admin' %}
                         <td>
@@ -68,7 +75,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="12" class="text-muted">Không tìm thấy đơn mua hàng nào phù hợp.</td>
+                    <td colspan="13" class="text-muted">Không tìm thấy đơn mua hàng nào phù hợp.</td>
                 </tr>
                 {% endfor %}
             </tbody>

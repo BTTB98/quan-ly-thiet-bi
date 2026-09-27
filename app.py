@@ -238,3 +238,48 @@ def edit_purchase(id):
 
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=5000, debug=True)
+  # --- QUẢN LÝ TÀI KHOẢN (CHỈ ADMIN) ---
+@app.route('/users')
+def list_users():
+  if 'user_id' not in session or session.get('role') != 'admin':
+    flash('Bạn không có quyền truy cập trang này!', 'danger')
+    return redirect(url_for('index'))
+
+  conn = sqlite3.connect('database.db')
+  conn.row_factory = sqlite3.Row
+  cursor = conn.cursor()
+  cursor.execute('SELECT id, username, role FROM users')
+  users = cursor.fetchall()
+  conn.close()
+
+  return render_template('users.html', users=users)
+
+
+@app.route('/users/add', methods=['GET', 'POST'])
+def add_user():
+  if 'user_id' not in session or session.get('role') != 'admin':
+    flash('Bạn không có quyền thêm tài khoản!', 'danger')
+    return redirect(url_for('index'))
+
+  if request.method == 'POST':
+    username = request.form['username']
+    password = request.form['password']
+    role = request.form['role']  # 'admin' hoặc 'staff' (nhân viên)
+
+    hashed_pw = generate_password_hash(password)
+
+    try:
+      conn = sqlite3.connect('database.db')
+      cursor = conn.cursor()
+      cursor.execute(
+          'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+          (username, hashed_pw, role),
+      )
+      conn.commit()
+      conn.close()
+      flash(f'Đã tạo tài khoản "{username}" thành công!', 'success')
+      return redirect(url_for('list_users'))
+    except sqlite3.IntegrityError:
+      flash('Tên đăng nhập này đã tồn tại, vui lòng chọn tên khác!', 'danger')
+
+  return render_template('add_user.html')

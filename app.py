@@ -1,6 +1,17 @@
 from datetime import datetime
+import io
 import sqlite3
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import (
+    Flask,
+    flash,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    session,
+    url_for,
+)
+import pandas as pd
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
@@ -22,7 +33,7 @@ def init_db():
         )
     ''')
 
-  # 2. Bảng đơn mua hàng (Purchases - bổ sung cost_code)
+  # 2. Bảng đơn mua hàng (Purchases)
   cursor.execute('''
         CREATE TABLE IF NOT EXISTS purchases (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,7 +111,7 @@ def logout():
 
 
 # ==========================================
-# QUẢN LÝ ĐƠN MUA HÀNG (PURCHASES)
+# QUẢN LÝ ĐƠN MUA HÀNG, TÌM KIẾM, LỌC TRẠNG THÁI & XUẤT EXCEL
 # ==========================================
 
 @app.route('/purchases')
@@ -109,27 +120,81 @@ def list_purchases():
     return redirect(url_for('login'))
 
   search_query = request.args.get('q', '').strip()
+  status_filter = request.args.get('status', '').strip()
 
   conn = sqlite3.connect('database.db')
   conn.row_factory = sqlite3.Row
   cursor = conn.cursor()
 
-  if search_query:
-    query = """
-            SELECT * FROM purchases 
-            WHERE item_code LIKE ? OR item_name LIKE ? OR cost_code LIKE ?
-            ORDER BY id DESC
-        """
-    like_pattern = f'%{search_query}%'
-    cursor.execute(query, (like_pattern, like_pattern, like_pattern))
-  else:
-    cursor.execute('SELECT * FROM purchases ORDER BY id DESC')
+  # Xây dựng câu truy vấn động linh hoạt theo từ khóa và trạng thái
+  query = 'SELECT * FROM purchases WHERE 1=1'
+  params = []
 
+  if search_query:
+    query += (
+        ' AND (item_code LIKE ? OR item_name LIKE ? OR cost_code LIKE ? OR'
+        ' po_number LIKE ?)'
+    )
+    like_pattern = f'%{search_query}%'
+    params.extend([like_pattern, like_pattern, like_pattern, like_pattern])
+
+  if status_filter:
+    query += ' AND status = ?'
+    params.append(status_filter)
+
+  query += ' ORDER BY id DESC'
+
+  cursor.execute(query, params)
   purchases = cursor.fetchall()
   conn.close()
 
   return render_template(
-      'purchases.html', purchases=purchases, search_query=search_query
+      'purchases.html',
+      purchases=purchases,
+      search_query=search_query,
+      status_filter=status_filter,
+  )
+
+
+@app.route('/purchases/export')
+def export_purchases_excel():
+  if 'user_id' not in session:
+    return redirect(url_for('login'))
+
+  conn = sqlite3.connect('database.db')
+  df = pd.read_sql_query('SELECT * FROM purchases ORDER BY id DESC', conn)
+  conn.close()
+
+  df = df.rename(
+      columns={
+          'id': 'ID',
+          'cost_code': 'Mã chi phí',
+          'item_code': 'Mã vật tư',
+          'item_name': 'Tên vật tư',
+          'po_number': 'Số PO',
+          'supplier': 'Nhà cung cấp',
+          'quantity': 'Số lượng',
+          'unit_price': 'Đơn giá',
+          'total_price': 'Thành tiền',
+          'order_date': 'Ngày đặt',
+          'expected_date': 'Dự kiến nhận',
+          'status': 'Trạng thái',
+          'received_date': 'Ngày nhận thực tế',
+      }
+  )
+
+  output = io.BytesIO()
+  with pd.ExcelWriter(output, engine='openpyxl') as writer:
+    df.to_excel(writer, sheet_name='DanhSachDonHang', index=False)
+  output.seek(0)
+
+  return send_file(
+      output,
+      mimetype=(
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ),
+      as_attachment=True,
+      download_name='danh_sach_don_mua_hang.xlsx',
   )
 
 
@@ -154,7 +219,6 @@ def add_purchase():
     received_date = request.form.get('received_date')
     status = request.form['status']
 
-    # TỰ ĐỘNG CẬP NHẬT TRẠNG THÁI NẾU ĐÃ CÓ NGÀY NHẬN THỰC TẾ
     if received_date and received_date.strip() != '':
       status = 'Đã nhận'
 
@@ -214,7 +278,6 @@ def edit_purchase(id):
     received_date = request.form.get('received_date')
     status = request.form['status']
 
-    # TỰ ĐỘNG CẬP NHẬT TRẠNG THÁI NẾU ĐÃ CÓ NGÀY NHẬN THỰC TẾ
     if received_date and received_date.strip() != '':
       status = 'Đã nhận'
 

@@ -17,9 +17,7 @@
             <a href="{{ url_for('export_purchases_excel') }}" class="btn btn-success">📥 Tải file Excel</a>
         </div>
 
-        <!-- Form tìm kiếm kết hợp Lọc theo Trạng thái -->
         <form method="GET" action="{{ url_for('list_purchases') }}" class="d-flex gap-2 align-items-center flex-wrap">
-            <!-- Lọc theo trạng thái -->
             <select name="status" class="form-select" style="width: 160px;" onchange="this.form.submit()">
                 <option value="">-- Tất cả trạng thái --</option>
                 <option value="Đang đặt" {% if status_filter == 'Đang đặt' %}selected{% endif %}>Đang đặt</option>
@@ -27,7 +25,6 @@
                 <option value="Đã nhận" {% if status_filter == 'Đã nhận' %}selected{% endif %}>Đã nhận</option>
             </select>
 
-            <!-- Tìm kiếm gần đúng -->
             <input type="text" name="q" class="form-control" style="width: 250px;" placeholder="Mã chi phí, mã/tên vật tư..." value="{{ search_query }}">
             
             <button type="submit" class="btn btn-outline-primary">Lọc/Tìm</button>
@@ -54,6 +51,7 @@
                     <th>Dự kiến nhận</th>
                     <th>Trạng thái</th>
                     <th>Ngày nhận thực tế</th>
+                    <th>Đánh giá vật tư</th>
                     {% if session.get('role') == 'admin' %}
                         <th>Hành động</th>
                     {% endif %}
@@ -80,6 +78,13 @@
                         {% endif %}
                     </td>
                     <td>{{ p.received_date or 'Chưa nhận' }}</td>
+                    <td>
+                        {% if p.evaluation == 'Có' %}
+                            <span class="badge bg-success">Có</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Chưa</span>
+                        {% endif %}
+                    </td>
                     {% if session.get('role') == 'admin' %}
                         <td>
                             <a href="{{ url_for('edit_purchase', id=p.id) }}" class="btn btn-sm btn-warning">Sửa</a>
@@ -88,7 +93,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="13" class="text-muted">Không tìm thấy đơn mua hàng nào phù hợp với bộ lọc.</td>
+                    <td colspan="14" class="text-muted">Không tìm thấy đơn mua hàng nào phù hợp với bộ lọc.</td>
                 </tr>
                 {% endfor %}
             </tbody>

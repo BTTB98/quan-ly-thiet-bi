@@ -4,7 +4,7 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
-app.secret_key = 'khoa_bi_mat_sieu_an_toan'  # Khóa bí mật cho session
+app.secret_key = 'khoa_bi_mat_sieu_an_toan'
 
 
 # --- KHỞI TẠO CƠ SỞ DỮ LIỆU ---
@@ -22,20 +22,11 @@ def init_db():
         )
     ''')
 
-  # 2. Bảng thiết bị (Equipment)
-  cursor.execute('''
-        CREATE TABLE IF NOT EXISTS equipment (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            code TEXT UNIQUE NOT NULL,
-            status TEXT NOT NULL
-        )
-    ''')
-
-  # 3. Bảng đơn mua hàng (Purchases)
+  # 2. Bảng đơn mua hàng (Purchases - bổ sung cost_code)
   cursor.execute('''
         CREATE TABLE IF NOT EXISTS purchases (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cost_code TEXT,
             item_code TEXT,
             item_name TEXT NOT NULL,
             po_number TEXT,
@@ -50,7 +41,7 @@ def init_db():
         )
     ''')
 
-  # Tạo tài khoản Admin mặc định nếu chưa có (username: admin, password: admin123)
+  # Tạo tài khoản Admin mặc định nếu chưa có
   cursor.execute('SELECT * FROM users WHERE username = ?', ('admin',))
   if not cursor.fetchone():
     hashed_pw = generate_password_hash('admin123')
@@ -109,7 +100,7 @@ def logout():
 
 
 # ==========================================
-# QUẢN LÝ ĐƠN MUA HÀNG (PURCHASES & TÌM KIẾM)
+# QUẢN LÝ ĐƠN MUA HÀNG (PURCHASES)
 # ==========================================
 
 @app.route('/purchases')
@@ -117,7 +108,6 @@ def list_purchases():
   if 'user_id' not in session:
     return redirect(url_for('login'))
 
-  # Lấy từ khóa tìm kiếm từ thanh URL (nếu có)
   search_query = request.args.get('q', '').strip()
 
   conn = sqlite3.connect('database.db')
@@ -125,14 +115,13 @@ def list_purchases():
   cursor = conn.cursor()
 
   if search_query:
-    # Tìm kiếm gần đúng theo item_code hoặc item_name
     query = """
             SELECT * FROM purchases 
-            WHERE item_code LIKE ? OR item_name LIKE ? 
+            WHERE item_code LIKE ? OR item_name LIKE ? OR cost_code LIKE ?
             ORDER BY id DESC
         """
     like_pattern = f'%{search_query}%'
-    cursor.execute(query, (like_pattern, like_pattern))
+    cursor.execute(query, (like_pattern, like_pattern, like_pattern))
   else:
     cursor.execute('SELECT * FROM purchases ORDER BY id DESC')
 
@@ -151,26 +140,33 @@ def add_purchase():
     return redirect(url_for('list_purchases'))
 
   if request.method == 'POST':
+    cost_code = request.form.get('cost_code')
     item_code = request.form.get('item_code')
     item_name = request.form['item_name']
     po_number = request.form['po_number']
     supplier = request.form['supplier']
     quantity = int(request.form['quantity'])
     unit_price = float(request.form['unit_price'])
-    total_price = quantity * unit_price  # Tự động tính thành tiền
+    total_price = quantity * unit_price
     order_date = request.form['order_date']
     expected_date = request.form['expected_date']
-    status = request.form['status']
+
     received_date = request.form.get('received_date')
+    status = request.form['status']
+
+    # TỰ ĐỘNG CẬP NHẬT TRẠNG THÁI NẾU ĐÃ CÓ NGÀY NHẬN THỰC TẾ
+    if received_date and received_date.strip() != '':
+      status = 'Đã nhận'
 
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
     cursor.execute(
         """
-            INSERT INTO purchases (item_code, item_name, po_number, supplier, quantity, unit_price, total_price, order_date, expected_date, status, received_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO purchases (cost_code, item_code, item_name, po_number, supplier, quantity, unit_price, total_price, order_date, expected_date, status, received_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
+            cost_code,
             item_code,
             item_name,
             po_number,
@@ -204,6 +200,7 @@ def edit_purchase(id):
   cursor = conn.cursor()
 
   if request.method == 'POST':
+    cost_code = request.form.get('cost_code')
     item_code = request.form.get('item_code')
     item_name = request.form['item_name']
     po_number = request.form['po_number']
@@ -213,16 +210,22 @@ def edit_purchase(id):
     total_price = quantity * unit_price
     order_date = request.form['order_date']
     expected_date = request.form['expected_date']
-    status = request.form['status']
+
     received_date = request.form.get('received_date')
+    status = request.form['status']
+
+    # TỰ ĐỘNG CẬP NHẬT TRẠNG THÁI NẾU ĐÃ CÓ NGÀY NHẬN THỰC TẾ
+    if received_date and received_date.strip() != '':
+      status = 'Đã nhận'
 
     cursor.execute(
         """
             UPDATE purchases 
-            SET item_code=?, item_name=?, po_number=?, supplier=?, quantity=?, unit_price=?, total_price=?, order_date=?, expected_date=?, status=?, received_date=?
+            SET cost_code=?, item_code=?, item_name=?, po_number=?, supplier=?, quantity=?, unit_price=?, total_price=?, order_date=?, expected_date=?, status=?, received_date=?
             WHERE id=?
         """,
         (
+            cost_code,
             item_code,
             item_name,
             po_number,
@@ -279,7 +282,7 @@ def add_user():
   if request.method == 'POST':
     username = request.form['username']
     password = request.form['password']
-    role = request.form['role']  # 'admin' hoặc 'staff'
+    role = request.form['role']
 
     hashed_pw = generate_password_hash(password)
 

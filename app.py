@@ -4,7 +4,7 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # Thay đổi khóa bí mật của bạn
+app.secret_key = 'khoa_bi_mat_sieu_an_toan'  # Khóa bí mật cho session
 
 
 # --- KHỞI TẠO CƠ SỞ DỮ LIỆU ---
@@ -32,7 +32,7 @@ def init_db():
         )
     ''')
 
-  # 3. Bảng đơn mua hàng (Purchases) theo yêu cầu mới
+  # 3. Bảng đơn mua hàng (Purchases)
   cursor.execute('''
         CREATE TABLE IF NOT EXISTS purchases (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,7 +50,7 @@ def init_db():
         )
     ''')
 
-  # Tạo tài khoản Admin mặc định nếu chưa có
+  # Tạo tài khoản Admin mặc định nếu chưa có (username: admin, password: admin123)
   cursor.execute('SELECT * FROM users WHERE username = ?', ('admin',))
   if not cursor.fetchone():
     hashed_pw = generate_password_hash('admin123')
@@ -112,7 +112,6 @@ def logout():
 # QUẢN LÝ ĐƠN MUA HÀNG (PURCHASES)
 # ==========================================
 
-# Xem danh sách đơn mua hàng (Tất cả người dùng đã đăng nhập đều xem được)
 @app.route('/purchases')
 def list_purchases():
   if 'user_id' not in session:
@@ -128,7 +127,6 @@ def list_purchases():
   return render_template('purchases.html', purchases=purchases)
 
 
-# Thêm đơn mua hàng (Chỉ Admin)
 @app.route('/purchases/add', methods=['GET', 'POST'])
 def add_purchase():
   if 'user_id' not in session or session.get('role') != 'admin':
@@ -178,7 +176,6 @@ def add_purchase():
   return render_template('add_purchase.html')
 
 
-# Sửa đơn mua hàng (Chỉ Admin)
 @app.route('/purchases/edit/<int:id>', methods=['GET', 'POST'])
 def edit_purchase(id):
   if 'user_id' not in session or session.get('role') != 'admin':
@@ -236,61 +233,15 @@ def edit_purchase(id):
   return render_template('edit_purchase.html', purchase=purchase)
 
 
-if __name__ == '__main__':
-  app.run(host='0.0.0.0', port=5000, debug=True)
-  # --- QUẢN LÝ TÀI KHOẢN (CHỈ ADMIN) ---
+# ==========================================
+# QUẢN LÝ TÀI KHOẢN (CHỈ ADMIN)
+# ==========================================
+
 @app.route('/users')
 def list_users():
   if 'user_id' not in session or session.get('role') != 'admin':
     flash('Bạn không có quyền truy cập trang này!', 'danger')
     return redirect(url_for('index'))
-
-  conn = sqlite3.connect('database.db')
-  conn.row_factory = sqlite3.Row
-  cursor = conn.cursor()
-  cursor.execute('SELECT id, username, role FROM users')
-  users = cursor.fetchall()
-  conn.close()
-
-  return render_template('users.html', users=users)
-
-
-@app.route('/users/add', methods=['GET', 'POST'])
-def add_user():
-  if 'user_id' not in session or session.get('role') != 'admin':
-    flash('Bạn không có quyền thêm tài khoản!', 'danger')
-    return redirect(url_for('index'))
-
-  if request.method == 'POST':
-    username = request.form['username']
-    password = request.form['password']
-    role = request.form['role']  # 'admin' hoặc 'staff' (nhân viên)
-
-    hashed_pw = generate_password_hash(password)
-
-    try:
-      conn = sqlite3.connect('database.db')
-      cursor = conn.cursor()
-      cursor.execute(
-          'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-          (username, hashed_pw, role),
-      )
-      conn.commit()
-      conn.close()
-      flash(f'Đã tạo tài khoản "{username}" thành công!', 'success')
-      return redirect(url_for('list_users'))
-    except sqlite3.IntegrityError:
-      flash('Tên đăng nhập này đã tồn tại, vui lòng chọn tên khác!', 'danger')
-
-  return render_template('add_user.html')
-  # --- QUẢN LÝ TÀI KHOẢN (CHỈ ADMIN) ---
-@app.route('/users')
-def list_users():
-  if 'user_id' not in session or session.get('role') != 'admin':
-    flash('Bạn không có quyền truy cập trang này!', 'danger')
-    return redirect(url_for('index'))
-
-  import sqlite3
 
   conn = sqlite3.connect('database.db')
   conn.row_factory = sqlite3.Row
@@ -316,8 +267,6 @@ def add_user():
     hashed_pw = generate_password_hash(password)
 
     try:
-      import sqlite3
-
       conn = sqlite3.connect('database.db')
       cursor = conn.cursor()
       cursor.execute(
@@ -332,3 +281,7 @@ def add_user():
       flash('Tên đăng nhập này đã tồn tại, vui lòng chọn tên khác!', 'danger')
 
   return render_template('add_user.html')
+
+
+if __name__ == '__main__':
+  app.run(host='0.0.0.0', port=5000, debug=True)

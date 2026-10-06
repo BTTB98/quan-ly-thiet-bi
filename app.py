@@ -11,18 +11,19 @@ from flask import (
     session,
     url_for,
 )
-import pandas as pd
+import openpyxl
 import requests
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 app.secret_key = 'khoa_bi_mat_sieu_an_toan'
 
-# Đường dẫn Web App Google Apps Script
+# --- ĐƯỜNG DẪN WEB APP GOOGLE APPS SCRIPT CHÍNH XÁC ---
 WEB_APP_URL = (
     'https://script.google.com/macros/s/AKfycbxG8bO19LoMxxIFnde9E8xzT-NE4GfSpVcJbu4GGO0Wzw9GcwSe6QkJPE3vp0D4nRrK/exec'
 )
 
+# Tài khoản mặc định hệ thống
 DEFAULT_USERS = [
     {
         'id': 1,
@@ -127,33 +128,54 @@ def export_purchases_excel():
     return redirect(url_for('login'))
 
   purchases = get_all_purchases()
-  df = pd.DataFrame(purchases)
 
-  if not df.empty:
-    df = df.rename(
-        columns={
-            'id': 'ID',
-            'cost_code': 'Mã CP',
-            'purpose': 'Mục đích sử dụng',
-            'item_code': 'Mã vật tư',
-            'item_name': 'Tên vật tư',
-            'po_number': 'Số PO',
-            'supplier': 'Nhà cung cấp',
-            'unit': 'ĐVT',
-            'quantity': 'SL',
-            'unit_price': 'Đơn giá',
-            'total_price': 'Thành tiền',
-            'sc_received_date': 'Ngày SC nhận phiếu YC',
-            'expected_date': 'Ngày dự kiến hàng về',
-            'status': 'Trạng thái',
-            'received_date': 'Ngày nhận thực tế',
-            'evaluation': 'Đánh giá vật tư',
-        }
-    )
+  wb = openpyxl.Workbook()
+  ws = wb.active
+  ws.title = 'DanhSachDonHang'
+
+  headers = [
+      'ID',
+      'Mã CP',
+      'Mục đích sử dụng',
+      'Mã vật tư',
+      'Tên vật tư',
+      'Số PO',
+      'Nhà cung cấp',
+      'ĐVT',
+      'SL',
+      'Đơn giá',
+      'Thành tiền',
+      'Ngày SC nhận phiếu YC',
+      'Ngày dự kiến hàng về',
+      'Trạng thái',
+      'Ngày nhận thực tế',
+      'Đánh giá vật tư',
+  ]
+  ws.append(headers)
+
+  for p in purchases:
+    row = [
+        p.get('id', ''),
+        p.get('cost_code', ''),
+        p.get('purpose', ''),
+        p.get('item_code', ''),
+        p.get('item_name', ''),
+        p.get('po_number', ''),
+        p.get('supplier', ''),
+        p.get('unit', ''),
+        p.get('quantity', ''),
+        p.get('unit_price', ''),
+        p.get('total_price', ''),
+        p.get('sc_received_date', ''),
+        p.get('expected_date', ''),
+        p.get('status', ''),
+        p.get('received_date', ''),
+        p.get('evaluation', ''),
+    ]
+    ws.append(row)
 
   output = io.BytesIO()
-  with pd.ExcelWriter(output, engine='openpyxl') as writer:
-    df.to_excel(writer, sheet_name='DanhSachDonHang', index=False)
+  wb.save(output)
   output.seek(0)
 
   return send_file(

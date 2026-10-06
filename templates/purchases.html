@@ -3,36 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Đơn Mua Hàng Vật Tư</title>
+    <title>Danh sách Đơn mua hàng</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body { background-color: #f8f9fa; }
-        .table-container { background: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .table th { background-color: #212529 !important; color: #ffffff !important; white-space: nowrap; font-size: 0.85rem; text-align: center; vertical-align: middle; }
-        .table td { font-size: 0.85rem; vertical-align: middle; }
-        .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
-        .status-received { background-color: #d1e7dd; color: #0f5132; }
-        .status-pending { background-color: #f8d7da; color: #842029; }
-    </style>
+    <!-- FontAwesome cho icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="bg-light">
+    <!-- Thanh điều hướng navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}"><i class="fas fa-home me-2"></i>Quản Lý Đơn Mua Hàng</a>
+            <div class="d-flex align-items-center">
+                <span class="text-light me-3">
+                    Xin chào, <strong>{{ session.get('username') }}</strong>
+                </span>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Đăng xuất</a>
+            </div>
+        </div>
+    </nav>
 
-    <div class="container-fluid py-4">
-        <!-- Header & Thông báo -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2><i class="fas fa-shopping-cart text-primary"></i> Quản lý Đơn Mua Hàng Vật Tư</h2>
-            <div>
-                <a href="{{ url_for('index') }}" class="btn btn-secondary"><i class="fas fa-home"></i> Trang chủ</a>
+    <!-- Nội dung chính -->
+    <div class="container-fluid mt-4 px-4">
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-6">
+                <h2><i class="fas fa-list-alt me-2"></i>Danh Sách Đơn Mua Hàng & Vật Tư</h2>
+            </div>
+            <div class="col-md-6 text-md-end">
                 {% if session.get('role') == 'admin' %}
-                <a href="{{ url_for('add_purchase') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Thêm đơn</a>
+                <a href="{{ url_for('add_purchase') }}" class="btn btn-success me-2">
+                    <i class="fas fa-plus-circle me-1"></i> Thêm Đơn Hàng Mới
+                </a>
                 {% endif %}
-                <a href="{{ url_for('export_purchases_excel') }}" class="btn btn-success"><i class="fas fa-file-excel"></i> Tải Excel</a>
-                <a href="{{ url_for('logout') }}" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                <a href="{{ url_for('export_purchases_excel') }}" class="btn btn-primary">
+                    <i class="fas fa-file-excel me-1"></i> Xuất Excel
+                </a>
             </div>
         </div>
 
+        <!-- Thông báo (nếu có) -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -44,99 +53,114 @@
             {% endif %}
         {% endwith %}
 
-        <!-- Thanh tìm kiếm và bộ lọc -->
-        <div class="card mb-4 shadow-sm">
+        <!-- Form Tìm kiếm và Lọc -->
+        <div class="card shadow-sm mb-4">
             <div class="card-body">
                 <form method="GET" action="{{ url_for('list_purchases') }}" class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-7">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" name="q" value="{{ search_query }}" placeholder="Tìm kiếm theo mã vật tư, tên vật tư, số PO, nhà cung cấp...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <select name="status" class="form-select">
                             <option value="">-- Tất cả trạng thái --</option>
                             <option value="Đã nhận" {% if status_filter == 'Đã nhận' %}selected{% endif %}>Đã nhận</option>
                             <option value="Chưa nhận" {% if status_filter == 'Chưa nhận' %}selected{% endif %}>Chưa nhận</option>
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <input type="text" name="q" class="form-control" placeholder="Tìm theo mã CP, mục đích, mã/tên vật tư, số PO, nhà cung cấp..." value="{{ search_query }}">
-                    </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i> Lọc</button>
+                    <div class="col-md-2 d-grid">
+                        <button type="submit" class="btn btn-dark"><i class="fas fa-filter me-1"></i> Lọc kết quả</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Bảng danh sách -->
-        <div class="table-container">
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Mã CP</th>
-                            <th>Mục đích sử dụng</th>
-                            <th>Mã vật tư</th>
-                            <th>Tên vật tư</th>
-                            <th>Số PO</th>
-                            <th>Nhà cung cấp</th>
-                            <th>ĐVT</th>
-                            <th>SL</th>
-                            <th>Đơn giá</th>
-                            <th>Thành tiền</th>
-                            <th>Ngày SC nhận phiếu YC</th>
-                            <th>Ngày dự kiến hàng về</th>
-                            <th>Trạng thái</th>
-                            <th>Ngày nhận thực tế</th>
-                            <th>Đánh giá vật tư</th>
-                            {% if session.get('role') == 'admin' %}
-                            <th>Hành động</th>
-                            {% endif %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if purchases %}
-                            {% for p in purchases %}
+        <!-- Bảng hiển thị dữ liệu -->
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-bordered align-middle mb-0 text-center" style="font-size: 0.9rem;">
+                        <thead class="table-dark">
                             <tr>
-                                <td class="text-center">{{ p.get('id', '') }}</td>
-                                <td>{{ p.get('cost_code', '') }}</td>
-                                <td>{{ p.get('purpose', '') }}</td>
-                                <td>{{ p.get('item_code', '') }}</td>
-                                <td><strong>{{ p.get('item_name', '') }}</strong></td>
-                                <td>{{ p.get('po_number', '') }}</td>
-                                <td>{{ p.get('supplier', '') }}</td>
-                                <td class="text-center">{{ p.get('unit', '') }}</td>
-                                <td class="text-end">{{ p.get('quantity', 0) }}</td>
-                                <td class="text-end">{{ "{:,.0f}".format(p.get('unit_price', 0)) if p.get('unit_price') else 0 }}</td>
-                                <td class="text-end fw-bold text-success">{{ "{:,.0f}".format(p.get('total_price', 0)) if p.get('total_price') else 0 }}</td>
-                                <td class="text-center">{{ p.get('sc_received_date', '') }}</td>
-                                <td class="text-center">{{ p.get('expected_date', '') }}</td>
-                                <td class="text-center">
-                                    {% if p.get('status') == 'Đã nhận' %}
-                                        <span class="status-badge status-received">Đã nhận</span>
-                                    {% else %}
-                                        <span class="status-badge status-pending">Chưa nhận</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-center">{{ p.get('received_date', '') }}</td>
-                                <td class="text-center">{{ p.get('evaluation', '') }}</td>
+                                <th>Mã CP</th>
+                                <th>Mục đích</th>
+                                <th>Mã vật tư</th>
+                                <th style="min-width: 180px;">Tên vật tư</th>
+                                <th>Số PO</th>
+                                <th>Nhà cung cấp</th>
+                                <th>ĐVT</th>
+                                <th>SL</th>
+                                <th>Đơn giá</th>
+                                <th>Thành tiền</th>
+                                <th>Ngày SC nhận</th>
+                                <th>Ngày dự kiến</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày nhận thực tế</th>
+                                <th>Đánh giá</th>
                                 {% if session.get('role') == 'admin' %}
-                                <td class="text-center">
-                                    <a href="{{ url_for('edit_purchase', id=p.get('id')) }}" class="btn btn-sm btn-warning" title="Sửa"><i class="fas fa-edit"></i></a>
-                                </td>
+                                <th>Hành động</th>
                                 {% endif %}
                             </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="17" class="text-center py-4 text-muted">Không tìm thấy đơn mua hàng nào phù hợp với bộ lọc.</td>
-                            </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {% if purchases %}
+                                {% for p in purchases %}
+                                <tr>
+                                    <td>{{ p.cost_code }}</td>
+                                    <td>{{ p.purpose }}</td>
+                                    <td class="fw-bold">{{ p.item_code }}</td>
+                                    <td class="text-start">{{ p.item_name }}</td>
+                                    <td>{{ p.po_number }}</td>
+                                    <td>{{ p.supplier }}</td>
+                                    <td>{{ p.unit }}</td>
+                                    <td>{{ p.quantity }}</td>
+                                    <td class="text-end">{{ "{:,.0f}".format(p.unit_price|float) if p.unit_price else 0 }}</td>
+                                    <td class="text-end fw-bold text-success">
+                                        {% set qty = p.quantity|float if p.quantity else 0 %}
+                                        {% set price = p.unit_price|float if p.unit_price else 0 %}
+                                        {{ "{:,.0f}".format(qty * price) }}
+                                    </td>
+                                    <td>{{ p.sc_received_date }}</td>
+                                    <td>{{ p.expected_date }}</td>
+                                    <td>
+                                        {% if p.status == 'Đã nhận' %}
+                                            <span class="badge bg-success px-2 py-1">Đã nhận</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark px-2 py-1">Chưa nhận</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ p.received_date }}</td>
+                                    <td>{{ p.evaluation }}</td>
+                                    {% if session.get('role') == 'admin' %}
+                                    <td>
+                                        <a href="{{ url_for('edit_purchase', id=p.id) }}" class="btn btn-warning btn-sm" title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="16" class="text-center py-4 text-muted">Không tìm thấy đơn mua hàng nào phù hợp.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
+        </div>
+
+        <div class="mt-4 mb-4">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Quay lại trang chủ
+            </a>
         </div>
     </div>
 
-    <!-- Bootstrap 5 JS -->
+    <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

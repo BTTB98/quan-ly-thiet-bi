@@ -3,127 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chỉnh Sửa Đơn Mua Hàng</title>
+    <title>Chỉnh sửa đơn hàng</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body { background-color: #f8f9fa; }
-        .form-container { background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); max-width: 900px; margin: 40px auto; }
-    </style>
+    <!-- FontAwesome cho icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-
-    <div class="container">
-        <div class="form-container">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="fas fa-edit text-warning"></i> Chỉnh Sửa Đơn Mua Hàng (ID: {{ purchase.get('id') }})</h2>
-                <a href="{{ url_for('list_purchases') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+<body class="bg-light">
+    <div class="container mt-4 mb-5" style="max-width: 700px;">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0"><i class="fas fa-edit me-2"></i>Chỉnh Sửa Đơn Mua Hàng #{{ purchase.id }}</h4>
             </div>
-
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Mã CP:</label>
+                            <input type="text" class="form-control" name="cost_code" value="{{ purchase.cost_code }}">
                         </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
-            <form method="POST" action="{{ url_for('edit_purchase', id=purchase.get('id')) }}">
-                <div class="row g-3">
-                    <!-- Mã CP -->
-                    <div class="col-md-6">
-                        <label for="cost_code" class="form-label">Mã CP</label>
-                        <input type="text" class="form-control" id="cost_code" name="cost_code" value="{{ purchase.get('cost_code', '') }}">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Mục đích:</label>
+                            <input type="text" class="form-control" name="purpose" value="{{ purchase.purpose }}">
+                        </div>
                     </div>
 
-                    <!-- Mục đích sử dụng -->
-                    <div class="col-md-6">
-                        <label for="purpose" class="form-label">Mục đích sử dụng</label>
-                        <input type="text" class="form-control" id="purpose" name="purpose" value="{{ purchase.get('purpose', '') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Mã vật tư:</label>
+                            <input type="text" class="form-control" name="item_code" value="{{ purchase.item_code }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tên vật tư (*):</label>
+                            <input type="text" class="form-control" name="item_name" value="{{ purchase.item_name }}" required>
+                        </div>
                     </div>
 
-                    <!-- Mã vật tư -->
-                    <div class="col-md-6">
-                        <label for="item_code" class="form-label">Mã vật tư</label>
-                        <input type="text" class="form-control" id="item_code" name="item_code" value="{{ purchase.get('item_code', '') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Số PO (*):</label>
+                            <input type="text" class="form-control" name="po_number" value="{{ purchase.po_number }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nhà cung cấp (*):</label>
+                            <input type="text" class="form-control" name="supplier" value="{{ purchase.supplier }}" required>
+                        </div>
                     </div>
 
-                    <!-- Tên vật tư -->
-                    <div class="col-md-6">
-                        <label for="item_name" class="form-label">Tên vật tư <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="item_name" name="item_name" required value="{{ purchase.get('item_name', '') }}">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">ĐVT:</label>
+                            <input type="text" class="form-control" name="unit" value="{{ purchase.unit }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Số lượng (*):</label>
+                            <input type="number" class="form-control" name="quantity" value="{{ purchase.quantity }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Đơn giá (*):</label>
+                            <input type="number" step="any" class="form-control" name="unit_price" value="{{ purchase.unit_price }}" required>
+                        </div>
                     </div>
 
-                    <!-- Số PO -->
-                    <div class="col-md-6">
-                        <label for="po_number" class="form-label">Số PO <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="po_number" name="po_number" required value="{{ purchase.get('po_number', '') }}">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Ngày SC nhận phiếu YC:</label>
+                            <input type="date" class="form-control" name="sc_received_date" value="{{ purchase.sc_received_date }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Ngày dự kiến hàng về:</label>
+                            <input type="date" class="form-control" name="expected_date" value="{{ purchase.expected_date }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Ngày nhận thực tế:</label>
+                            <input type="date" class="form-control" name="received_date" value="{{ purchase.received_date }}">
+                        </div>
                     </div>
 
-                    <!-- Nhà cung cấp -->
-                    <div class="col-md-6">
-                        <label for="supplier" class="form-label">Nhà cung cấp <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="supplier" name="supplier" required value="{{ purchase.get('supplier', '') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Đánh giá vật tư:</label>
+                        <input type="text" class="form-control" name="evaluation" value="{{ purchase.evaluation }}">
                     </div>
 
-                    <!-- ĐVT -->
-                    <div class="col-md-4">
-                        <label for="unit" class="form-label">Đơn vị tính (ĐVT)</label>
-                        <input type="text" class="form-control" id="unit" name="unit" value="{{ purchase.get('unit', '') }}">
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('list_purchases') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Quay lại
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Lưu thay đổi
+                        </button>
                     </div>
-
-                    <!-- Số lượng -->
-                    <div class="col-md-4">
-                        <label for="quantity" class="form-label">Số lượng (SL) <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" id="quantity" name="quantity" min="1" required value="{{ purchase.get('quantity', 1) }}">
-                    </div>
-
-                    <!-- Đơn giá -->
-                    <div class="col-md-4">
-                        <label for="unit_price" class="form-label">Đơn giá <span class="text-danger">*</span></label>
-                        <input type="number" step="any" class="form-control" id="unit_price" name="unit_price" min="0" required value="{{ purchase.get('unit_price', 0) }}">
-                    </div>
-
-                    <!-- Ngày SC nhận phiếu YC -->
-                    <div class="col-md-6">
-                        <label for="sc_received_date" class="form-label">Ngày SC nhận phiếu YC</label>
-                        <input type="date" class="form-control" id="sc_received_date" name="sc_received_date" value="{{ purchase.get('sc_received_date', '') }}">
-                    </div>
-
-                    <!-- Ngày dự kiến hàng về -->
-                    <div class="col-md-6">
-                        <label for="expected_date" class="form-label">Ngày dự kiến hàng về</label>
-                        <input type="date" class="form-control" id="expected_date" name="expected_date" value="{{ purchase.get('expected_date', '') }}">
-                    </div>
-
-                    <!-- Ngày nhận thực tế -->
-                    <div class="col-md-6">
-                        <label for="received_date" class="form-label">Ngày nhận thực tế</label>
-                        <input type="date" class="form-control" id="received_date" name="received_date" value="{{ purchase.get('received_date', '') }}">
-                        <div class="form-text text-muted">Nếu điền ngày này, trạng thái sẽ tự động chuyển thành "Đã nhận".</div>
-                    </div>
-
-                    <!-- Đánh giá vật tư -->
-                    <div class="col-md-6">
-                        <label for="evaluation" class="form-label">Đánh giá vật tư</label>
-                        <input type="text" class="form-control" id="evaluation" name="evaluation" value="{{ purchase.get('evaluation', 'chưa') }}">
-                    </div>
-
-                    <!-- Nút thao tác -->
-                    <div class="col-12 mt-4 text-end">
-                        <a href="{{ url_for('list_purchases') }}" class="btn btn-secondary me-2"><i class="fas fa-times"></i> Hủy</a>
-                        <button type="submit" class="btn btn-warning text-white"><i class="fas fa-save"></i> Cập nhật đơn hàng</button>
-                    </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
-
-    <!-- Bootstrap 5 JS -->
+    <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

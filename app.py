@@ -32,7 +32,7 @@ USERS_DB = [
     },
     {
         'id': 2,
-        'username': 'nhanvien',
+        'username': 'Huyen',
         'password': generate_password_hash('123456'),
         'role': 'viewer',
     },

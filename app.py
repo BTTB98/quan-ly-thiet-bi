@@ -22,7 +22,7 @@ WEB_APP_URL = (
     'https://script.google.com/macros/s/AKfycbxG8bO19LoMxxIFnde9E8xzT-NE4GfSpVcJbu4GGO0Wzw9GcwSe6QkJPE3vp0D4nRrK/exec'
 )
 
-# Danh sách tài khoản hệ thống (Có thể mở rộng thêm tài khoản viewer)
+# Danh sách tài khoản hệ thống (Admin và Viewer)
 USERS_DB = [
     {
         'id': 1,
@@ -126,7 +126,6 @@ def add_user():
       flash('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!', 'danger')
       return redirect(url_for('add_user'))
 
-    # Kiểm tra xem tên đăng nhập đã tồn tại chưa
     if any(u['username'] == username for u in USERS_DB):
       flash('Tên đăng nhập này đã tồn tại!', 'danger')
       return redirect(url_for('add_user'))
@@ -335,7 +334,7 @@ def add_purchase():
 
 @app.route('/purchases/edit/<int:id>', methods=['GET', 'POST'])
 def edit_purchase(id):
-  if 'user_id' not in session or session.get('role') != 'admin':
+  if 'user_id' not in session or session.get('role') == 'viewer':
     flash('Bạn không có quyền chỉnh sửa đơn hàng này!', 'danger')
     return redirect(url_for('list_purchases'))
 
@@ -345,6 +344,19 @@ def edit_purchase(id):
   if not purchase:
     flash('Không tìm thấy đơn hàng cần sửa!', 'danger')
     return redirect(url_for('list_purchases'))
+
+  # Xử lý chuẩn hóa ngày tháng về định dạng YYYY-MM-DD để hiển thị chuẩn vào thẻ input type="date"
+  for date_field in ['sc_received_date', 'expected_date', 'received_date']:
+    val = str(purchase.get(date_field, '')).strip()
+    if val and val.lower() not in ['none', 'nan', '']:
+      if 'T' in val:
+        val = val.split('T')[0]
+      elif len(val) == 10 and val[2] == '/' and val[5] == '/':
+        parts = val.split('/')
+        val = f'{parts[2]}-{parts[1]}-{parts[0]}'
+      purchase[date_field] = val
+    else:
+      purchase[date_field] = ''
 
   if request.method == 'POST':
     cost_code = request.form.get('cost_code', '')

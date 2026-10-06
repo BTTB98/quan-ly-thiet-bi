@@ -18,7 +18,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 app = Flask(__name__)
 app.secret_key = 'khoa_bi_mat_sieu_an_toan'
 
-# --- ĐƯỜNG DẪN WEB APP GOOGLE APPS SCRIPT CỦA BẠN ---
+# --- ĐƯỜNG DẪN WEB APP GOOGLE APPS SCRIPT CHÍNH XÁC ---
 WEB_APP_URL = (
     'https://script.google.com/macros/s/AKfycbxG8bO19LoMxxIFnde9E8xzT-NE4GfSpVcJbu4GGO0Wzw9GcwSe6QkJPE3vp0D4nRrK/exec'
 )
@@ -36,10 +36,19 @@ DEFAULT_USERS = [
 
 def get_all_purchases():
   try:
-    response = requests.get(WEB_APP_URL)
+    response = requests.get(WEB_APP_URL, timeout=15)
     print('Phản hồi GET từ Google Sheets:', response.text)
     if response.status_code == 200:
-      return response.json()
+      raw_data = response.json()
+      # Tự động chuẩn hóa toàn bộ key về chữ thường (tránh lỗi ID viết hoa / id viết thường)
+      normalized_data = []
+      if isinstance(raw_data, list):
+        for item in raw_data:
+          new_item = {}
+          for k, v in item.items():
+            new_item[str(k).lower().strip()] = v
+          normalized_data.append(new_item)
+      return normalized_data
   except Exception as e:
     print(f'Lỗi kết nối Google Sheets (GET): {e}')
   return []
@@ -90,6 +99,7 @@ def list_purchases():
 
   filtered_purchases = []
   for p in reversed(purchases):
+    # Kiểm tra an toàn id
     if not str(p.get('id', '')):
       continue
 
@@ -204,8 +214,7 @@ def add_purchase():
     }
 
     try:
-      response = requests.post(WEB_APP_URL, json=payload)
-      # In kết quả phản hồi từ Google Apps Script ra terminal để kiểm tra lỗi
+      response = requests.post(WEB_APP_URL, json=payload, timeout=15)
       print('Phản hồi POST từ Google Apps Script:', response.text)
 
       if response.status_code == 200:
@@ -279,8 +288,8 @@ def edit_purchase(id):
     }
 
     try:
-      response = requests.post(WEB_APP_URL, json=payload)
-      print('Phản hồi UPDATE từ Google Apps Script:', response.text)
+      response = requests.post(WEB_APP_URL, json=payload, timeout=15)
+      print('Phản hồi UPDATE từ Google Sheets:', response.text)
 
       if response.status_code == 200:
         res_json = response.json()

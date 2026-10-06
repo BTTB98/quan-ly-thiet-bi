@@ -18,12 +18,11 @@ from werkzeug.security import check_password_hash, generate_password_hash
 app = Flask(__name__)
 app.secret_key = 'khoa_bi_mat_sieu_an_toan'
 
-# --- ĐƯỜNG DẪN WEB APP GOOGLE APPS SCRIPT CHÍNH XÁC ---
+# Đường dẫn Web App Google Apps Script
 WEB_APP_URL = (
     'https://script.google.com/macros/s/AKfycbxG8bO19LoMxxIFnde9E8xzT-NE4GfSpVcJbu4GGO0Wzw9GcwSe6QkJPE3vp0D4nRrK/exec'
 )
 
-# Tài khoản mặc định hệ thống
 DEFAULT_USERS = [
     {
         'id': 1,
@@ -37,10 +36,8 @@ DEFAULT_USERS = [
 def get_all_purchases():
   try:
     response = requests.get(WEB_APP_URL, timeout=15)
-    print('Phản hồi GET từ Google Sheets:', response.text)
     if response.status_code == 200:
       raw_data = response.json()
-      # Tự động chuẩn hóa toàn bộ key về chữ thường (tránh lỗi ID viết hoa / id viết thường)
       normalized_data = []
       if isinstance(raw_data, list):
         for item in raw_data:
@@ -99,7 +96,6 @@ def list_purchases():
 
   filtered_purchases = []
   for p in reversed(purchases):
-    # Kiểm tra an toàn id
     if not str(p.get('id', '')):
       continue
 
@@ -215,8 +211,6 @@ def add_purchase():
 
     try:
       response = requests.post(WEB_APP_URL, json=payload, timeout=15)
-      print('Phản hồi POST từ Google Apps Script:', response.text)
-
       if response.status_code == 200:
         res_json = response.json()
         if res_json.get('status') == 'success':
@@ -232,7 +226,6 @@ def add_purchase():
             'danger',
         )
     except Exception as e:
-      print(f'Lỗi ngoại lệ khi gửi request lên Google Sheets: {e}')
       flash(f'Lỗi khi lưu lên Google Sheets: {e}', 'danger')
 
     return redirect(url_for('list_purchases'))
@@ -289,8 +282,6 @@ def edit_purchase(id):
 
     try:
       response = requests.post(WEB_APP_URL, json=payload, timeout=15)
-      print('Phản hồi UPDATE từ Google Sheets:', response.text)
-
       if response.status_code == 200:
         res_json = response.json()
         if res_json.get('status') == 'success':
@@ -306,7 +297,6 @@ def edit_purchase(id):
             'danger',
         )
     except Exception as e:
-      print(f'Lỗi ngoại lệ khi cập nhật Google Sheets: {e}')
       flash(f'Lỗi khi cập nhật Google Sheets: {e}', 'danger')
 
     return redirect(url_for('list_purchases'))

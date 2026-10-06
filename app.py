@@ -19,10 +19,11 @@ app = Flask(__name__)
 app.secret_key = 'khoa_bi_mat_sieu_an_toan'
 
 # --- ĐƯỜNG DẪN WEB APP GOOGLE APPS SCRIPT CỦA BẠN ---
-# Hãy thay thế đoạn chuỗi bên dưới bằng URL Web App bạn nhận được từ Google Apps Script
-WEB_APP_URL = https://script.google.com/macros/s/AKfycbxG8bO19LoMxxIFnde9E8xzT-NE4GfSpVcJbu4GGO0Wzw9GcwSe6QkJPE3vp0D4nRrK/exec
+WEB_APP_URL = (
+    'https://script.google.com/macros/s/AKfycbxG8bO19LoMxxIFnde9E8xzT-NE4GfSpVcJbu4GGO0Wzw9GcwSe6QkJPE3vp0D4nRrK/exec'
+)
 
-# Tài khoản mặc định hệ thống (có thể thay đổi tùy ý)
+# Tài khoản mặc định hệ thống
 DEFAULT_USERS = [
     {
         'id': 1,
@@ -36,10 +37,11 @@ DEFAULT_USERS = [
 def get_all_purchases():
   try:
     response = requests.get(WEB_APP_URL)
+    print('Phản hồi GET từ Google Sheets:', response.text)
     if response.status_code == 200:
       return response.json()
   except Exception as e:
-    print(f'Lỗi kết nối Google Sheets: {e}')
+    print(f'Lỗi kết nối Google Sheets (GET): {e}')
   return []
 
 
@@ -202,9 +204,26 @@ def add_purchase():
     }
 
     try:
-      requests.post(WEB_APP_URL, json=payload)
-      flash('Thêm đơn mua hàng thành công lên Google Sheets!', 'success')
+      response = requests.post(WEB_APP_URL, json=payload)
+      # In kết quả phản hồi từ Google Apps Script ra terminal để kiểm tra lỗi
+      print('Phản hồi POST từ Google Apps Script:', response.text)
+
+      if response.status_code == 200:
+        res_json = response.json()
+        if res_json.get('status') == 'success':
+          flash('Thêm đơn mua hàng thành công lên Google Sheets!', 'success')
+        else:
+          flash(
+              f"Lỗi từ Google Sheets: {res_json.get('message', 'Không rõ')}",
+              'danger',
+          )
+      else:
+        flash(
+            f'Lỗi kết nối Google Sheets (HTTP Status {response.status_code})',
+            'danger',
+        )
     except Exception as e:
+      print(f'Lỗi ngoại lệ khi gửi request lên Google Sheets: {e}')
       flash(f'Lỗi khi lưu lên Google Sheets: {e}', 'danger')
 
     return redirect(url_for('list_purchases'))
@@ -260,9 +279,25 @@ def edit_purchase(id):
     }
 
     try:
-      requests.post(WEB_APP_URL, json=payload)
-      flash('Cập nhật đơn mua hàng thành công!', 'success')
+      response = requests.post(WEB_APP_URL, json=payload)
+      print('Phản hồi UPDATE từ Google Apps Script:', response.text)
+
+      if response.status_code == 200:
+        res_json = response.json()
+        if res_json.get('status') == 'success':
+          flash('Cập nhật đơn mua hàng thành công!', 'success')
+        else:
+          flash(
+              f"Lỗi cập nhật từ Google Sheets: {res_json.get('message', 'Không rõ')}",
+              'danger',
+          )
+      else:
+        flash(
+            f'Lỗi kết nối Google Sheets khi cập nhật (HTTP {response.status_code})',
+            'danger',
+        )
     except Exception as e:
+      print(f'Lỗi ngoại lệ khi cập nhật Google Sheets: {e}')
       flash(f'Lỗi khi cập nhật Google Sheets: {e}', 'danger')
 
     return redirect(url_for('list_purchases'))

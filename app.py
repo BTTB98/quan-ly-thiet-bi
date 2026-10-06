@@ -34,6 +34,18 @@ DEFAULT_USERS = [
 ]
 
 
+def format_date_str(date_str):
+  if not date_str:
+    return ''
+  try:
+    if 'T' in str(date_str):
+      date_str = str(date_str).split('T')[0]
+    dt = datetime.strptime(date_str.strip(), '%Y-%m-%d')
+    return dt.strftime('%d/%m/%Y')
+  except Exception:
+    return str(date_str)
+
+
 def get_all_purchases():
   try:
     response = requests.get(WEB_APP_URL, timeout=15)
@@ -99,6 +111,24 @@ def list_purchases():
   for p in reversed(purchases):
     if not str(p.get('id', '')):
       continue
+
+    # Tự động đồng bộ trạng thái: Nếu có ngày nhận thực tế thì chuyển thành 'Đã nhận'
+    received_date_raw = str(p.get('received_date', '')).strip()
+    if received_date_raw and received_date_raw.lower() not in [
+        'none',
+        'nan',
+        '',
+        'chưa',
+    ]:
+      p['status'] = 'Đã nhận'
+    else:
+      if not p.get('status') or p.get('status').strip() == '':
+        p['status'] = 'Chưa nhận'
+
+    # Định dạng lại các trường ngày tháng sang dd/mm/yyyy
+    p['sc_received_date'] = format_date_str(p.get('sc_received_date', ''))
+    p['expected_date'] = format_date_str(p.get('expected_date', ''))
+    p['received_date'] = format_date_str(p.get('received_date', ''))
 
     if status_filter and str(p.get('status', '')) != status_filter:
       continue
@@ -166,10 +196,10 @@ def export_purchases_excel():
         p.get('quantity', ''),
         p.get('unit_price', ''),
         p.get('total_price', ''),
-        p.get('sc_received_date', ''),
-        p.get('expected_date', ''),
+        format_date_str(p.get('sc_received_date', '')),
+        format_date_str(p.get('expected_date', '')),
         p.get('status', ''),
-        p.get('received_date', ''),
+        format_date_str(p.get('received_date', '')),
         p.get('evaluation', ''),
     ]
     ws.append(row)

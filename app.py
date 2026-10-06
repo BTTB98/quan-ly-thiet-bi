@@ -18,19 +18,24 @@ from werkzeug.security import check_password_hash, generate_password_hash
 app = Flask(__name__)
 app.secret_key = 'khoa_bi_mat_sieu_an_toan'
 
-# --- ĐƯỜNG DẪN WEB APP GOOGLE APPS SCRIPT CHÍNH XÁC ---
 WEB_APP_URL = (
     'https://script.google.com/macros/s/AKfycbxG8bO19LoMxxIFnde9E8xzT-NE4GfSpVcJbu4GGO0Wzw9GcwSe6QkJPE3vp0D4nRrK/exec'
 )
 
-# Tài khoản mặc định hệ thống
-DEFAULT_USERS = [
+# Danh sách tài khoản hệ thống (Có thể mở rộng thêm tài khoản viewer)
+USERS_DB = [
     {
         'id': 1,
         'username': 'admin',
         'password': generate_password_hash('admin123'),
         'role': 'admin',
-    }
+    },
+    {
+        'id': 2,
+        'username': 'nhanvien',
+        'password': generate_password_hash('123456'),
+        'role': 'viewer',
+    },
 ]
 
 
@@ -76,7 +81,7 @@ def login():
   if request.method == 'POST':
     username = request.form['username']
     password = request.form['password']
-    user = next((u for u in DEFAULT_USERS if u['username'] == username), None)
+    user = next((u for u in USERS_DB if u['username'] == username), None)
 
     if user and check_password_hash(user['password'], password):
       session['user_id'] = user['id']
@@ -97,6 +102,51 @@ def logout():
   return redirect(url_for('login'))
 
 
+# --- QUẢN LÝ TÀI KHOẢN (DÀNH CHO ADMIN) ---
+@app.route('/users')
+def list_users():
+  if 'user_id' not in session or session.get('role') != 'admin':
+    flash('Bạn không có quyền truy cập trang này!', 'danger')
+    return redirect(url_for('index'))
+  return render_template('users.html', users=USERS_DB)
+
+
+@app.route('/users/add', methods=['GET', 'POST'])
+def add_user():
+  if 'user_id' not in session or session.get('role') != 'admin':
+    flash('Bạn không có quyền thực hiện chức năng này!', 'danger')
+    return redirect(url_for('index'))
+
+  if request.method == 'POST':
+    username = request.form.get('username', '').strip()
+    password = request.form.get('password', '').strip()
+    role = request.form.get('role', 'viewer')
+
+    if not username or not password:
+      flash('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!', 'danger')
+      return redirect(url_for('add_user'))
+
+    # Kiểm tra xem tên đăng nhập đã tồn tại chưa
+    if any(u['username'] == username for u in USERS_DB):
+      flash('Tên đăng nhập này đã tồn tại!', 'danger')
+      return redirect(url_for('add_user'))
+
+    new_id = len(USERS_DB) + 1
+    USERS_DB.append({
+        'id': new_id,
+        'username': username,
+        'password': generate_password_hash(password),
+        'role': role,
+    })
+    flash(
+        f"Tạo tài khoản '{username}' (Quyền: {role}) thành công!", 'success'
+    )
+    return redirect(url_for('list_users'))
+
+  return render_template('add_user.html')
+
+
+# --- QUẢN LÝ ĐƠN HÀNG ---
 @app.route('/purchases')
 def list_purchases():
   if 'user_id' not in session:
@@ -112,7 +162,6 @@ def list_purchases():
     if not str(p.get('id', '')):
       continue
 
-    # Tự động đồng bộ trạng thái: Nếu có ngày nhận thực tế thì chuyển thành 'Đã nhận'
     received_date_raw = str(p.get('received_date', '')).strip()
     if received_date_raw and received_date_raw.lower() not in [
         'none',
@@ -125,7 +174,6 @@ def list_purchases():
       if not p.get('status') or p.get('status').strip() == '':
         p['status'] = 'Chưa nhận'
 
-    # Định dạng lại các trường ngày tháng sang dd/mm/yyyy
     p['sc_received_date'] = format_date_str(p.get('sc_received_date', ''))
     p['expected_date'] = format_date_str(p.get('expected_date', ''))
     p['received_date'] = format_date_str(p.get('received_date', ''))

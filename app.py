@@ -20,7 +20,7 @@ app.secret_key = 'khoa_bi_mat_sieu_an_toan'
 
 # --- ĐƯỜNG DẪN WEB APP GOOGLE APPS SCRIPT CỦA BẠN ---
 # Hãy thay thế đoạn chuỗi bên dưới bằng URL Web App bạn nhận được từ Google Apps Script
-WEB_APP_URL = 'DA_DAN_URL_WEB_APP_CUA_BAN_VAO_DAY'
+WEB_APP_URL = https://script.google.com/macros/s/AKfycbxG8bO19LoMxxIFnde9E8xzT-NE4GfSpVcJbu4GGO0Wzw9GcwSe6QkJPE3vp0D4nRrK/exec
 
 # Tài khoản mặc định hệ thống (có thể thay đổi tùy ý)
 DEFAULT_USERS = [

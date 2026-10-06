@@ -2,27 +2,75 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Trang chủ - Hệ thống Quản lý</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang chủ - Quản lý đơn mua hàng</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Xin chào, {{ session['username'] }} (Vai trò: <strong>{{ session['role'] }}</strong>)</h2>
-        <a href="{{ url_for('logout') }}" class="btn btn-danger">Đăng xuất</a>
-    </div>
-    
-    <hr>
+<body class="bg-light">
+    <!-- Thanh điều hướng navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">Quản Lý Đơn Mua Hàng</a>
+            <div class="d-flex align-items-center">
+                <span class="text-light me-3">
+                    Xin chào, <strong>{{ session.get('username') }}</strong>
+                </span>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Đăng xuất</a>
+            </div>
+        </div>
+    </nav>
 
-    <div class="list-group">
-        <a href="{{ url_for('list_purchases') }}" class="list-group-item list-group-item-action mb-2">
-            📦 Quản lý đơn mua hàng vật tư
-        </a>
-        
-        {% if session.get('role') == 'admin' %}
-            <a href="{{ url_for('list_purchases') }}" class="list-group-item list-group-item-action">
-                👥 Quản lý tài khoản nhân viên
-            </a>
-        {% endif %}
+    <!-- Nội dung chính -->
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Bảng điều khiển hệ thống</h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Hiển thị thông báo (nếu có) -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <p class="lead">Chào mừng bạn đến với hệ thống quản lý thiết bị và đơn mua hàng vật tư.</p>
+                        <hr>
+                        
+                        <!-- Danh sách chức năng -->
+                        <div class="list-group">
+                            <a href="{{ url_for('list_purchases') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+                                <span>📋 Xem danh sách Đơn Mua Hàng & Lọc dữ liệu</span>
+                                <span class="badge bg-primary rounded-pill">&rarr;</span>
+                            </a>
+                            
+                            {% if session.get('role') == 'admin' %}
+                            <a href="{{ url_for('add_purchase') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+                                <span>➕ Thêm Đơn Mua Hàng mới</span>
+                                <span class="badge bg-success rounded-pill">&rarr;</span>
+                            </a>
+                            {% endif %}
+                            
+                            <a href="{{ url_for('export_purchases_excel') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+                                <span>📊 Tải file Excel danh sách đơn hàng</span>
+                                <span class="badge bg-secondary rounded-pill">&rarr;</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

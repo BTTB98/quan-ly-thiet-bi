@@ -6,12 +6,14 @@
     <title>Trang chủ - Quản lý đơn mua hàng</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome cho icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-light">
     <!-- Thanh điều hướng navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('index') }}">Quản Lý Đơn Mua Hàng</a>
+            <a class="navbar-brand" href="{{ url_for('index') }}"><i class="fas fa-home me-2"></i>Quản Lý Đơn Mua Hàng</a>
             <div class="d-flex align-items-center">
                 <span class="text-light me-3">
                     Xin chào, <strong>{{ session.get('username') }}</strong>
@@ -22,49 +24,57 @@
     </nav>
 
     <!-- Nội dung chính -->
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card shadow">
-                    <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">Bảng điều khiển hệ thống</h4>
+    <div class="container mt-5" style="max-width: 800px;">
+        <!-- Thông báo (nếu có) -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
-                    <div class="card-body">
-                        <!-- Hiển thị thông báo (nếu có) -->
-                        {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                                {% for category, message in messages %}
-                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                        {{ message }}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
-                        {% endwith %}
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-                        <p class="lead">Chào mừng bạn đến với hệ thống quản lý thiết bị và đơn mua hàng vật tư.</p>
-                        <hr>
-                        
-                        <!-- Danh sách chức năng -->
-                        <div class="list-group">
-                            <a href="{{ url_for('list_purchases') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
-                                <span>📋 Xem danh sách Đơn Mua Hàng & Lọc dữ liệu</span>
-                                <span class="badge bg-primary rounded-pill">&rarr;</span>
-                            </a>
-                            
-                            {% if session.get('role') == 'admin' %}
-                            <a href="{{ url_for('add_purchase') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
-                                <span>➕ Thêm Đơn Mua Hàng mới</span>
-                                <span class="badge bg-success rounded-pill">&rarr;</span>
-                            </a>
-                            {% endif %}
-                            
-                            <a href="{{ url_for('export_purchases_excel') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
-                                <span>📊 Tải file Excel danh sách đơn hàng</span>
-                                <span class="badge bg-secondary rounded-pill">&rarr;</span>
-                            </a>
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Bảng điều khiển hệ thống</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Chào mừng bạn đến với hệ thống quản lý thiết bị và đơn mua hàng vật tư.</p>
+                <hr>
+                <div class="list-group">
+                    <a href="{{ url_for('list_purchases') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <i class="fas fa-list-alt text-primary me-2"></i> Xem danh sách Đơn Mua Hàng & Lọc dữ liệu
                         </div>
-                    </div>
+                        <i class="fas fa-arrow-right text-primary"></i>
+                    </a>
+
+                    {% if session.get('role') == 'admin' %}
+                    <a href="{{ url_for('add_purchase') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <i class="fas fa-plus-circle text-success me-2"></i> Thêm Đơn Mua Hàng mới
+                        </div>
+                        <i class="fas fa-arrow-right text-success"></i>
+                    </a>
+                    
+                    <!-- THÊM MỤC NÀY ĐỂ TRUY CẬP TRANG QUẢN LÝ TÀI KHOẢN -->
+                    <a href="{{ url_for('list_users') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <i class="fas fa-users-cog text-warning me-2"></i> Quản lý tài khoản nhân viên (Tạo/Xem tài khoản)
+                        </div>
+                        <i class="fas fa-arrow-right text-warning"></i>
+                    </a>
+                    {% endif %}
+
+                    <a href="{{ url_for('export_purchases_excel') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <i class="fas fa-file-excel text-secondary me-2"></i> Tải file Excel danh sách đơn hàng
+                        </div>
+                        <i class="fas fa-arrow-right text-secondary"></i>
+                    </a>
                 </div>
             </div>
         </div>

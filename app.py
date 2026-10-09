@@ -50,12 +50,12 @@ USERS_DB = [
     {
         'id': 1,
         'username': 'admin',
-        'password': generate_password_hash('admin123'),
+        'password': generate_password_hash('admin123@'),
         'role': 'admin',
     },
     {
         'id': 2,
-        'username': 'nhanvien',
+        'username': 'Huyen',
         'password': generate_password_hash('123456'),
         'role': 'viewer',
     },
@@ -325,7 +325,7 @@ def add_purchase():
       )
       db.session.add(new_p)
       db.session.commit()
-      flash('Thêm đơn mua hàng thành công vào Supabase!', 'success')
+      flash('Thêm đơn mua hàng thành công!', 'success')
     except Exception as e:
       db.session.rollback()
       flash(f'Lỗi khi lưu vào database: {e}', 'danger')

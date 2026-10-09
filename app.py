@@ -11,18 +11,41 @@ from flask import (
     session,
     url_for,
 )
+from flask_sqlalchemy import SQLAlchemy
 import openpyxl
-import requests
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 app.secret_key = 'khoa_bi_mat_sieu_an_toan'
 
-WEB_APP_URL = (
-    'https://script.google.com/macros/s/AKfycbxG8bO19LoMxxIFnde9E8xzT-NE4GfSpVcJbu4GGO0Wzw9GcwSe6QkJPE3vp0D4nRrK/exec'
-)
+# Lấy chuỗi kết nối từ biến môi trường trên Render (DATABASE_URL)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Danh sách tài khoản hệ thống (Admin và Viewer)
+db = SQLAlchemy(app)
+
+
+# --- MODEL DATABASE TRÊN SUPABASE ---
+class Purchase(db.Model):
+  __tablename__ = 'purchases'
+  id = db.Column(db.Integer, primary_key=True)
+  cost_code = db.Column(db.String(100))
+  purpose = db.Column(db.Text)
+  item_code = db.Column(db.String(100))
+  item_name = db.Column(db.Text, nullable=False)
+  po_number = db.Column(db.String(100), nullable=False)
+  supplier = db.Column(db.String(255), nullable=False)
+  unit = db.Column(db.String(50))
+  quantity = db.Column(db.Integer, nullable=False)
+  unit_price = db.Column(db.Numeric(15, 2), nullable=False)
+  sc_received_date = db.Column(db.Date)
+  expected_date = db.Column(db.Date)
+  received_date = db.Column(db.Date)
+  status = db.Column(db.String(50), default='Chưa nhận')
+  evaluation = db.Column(db.Text, default='chưa')
+
+
+# Danh sách tài khoản hệ thống (Admin / Viewer)
 USERS_DB = [
     {
         'id': 1,
@@ -32,41 +55,11 @@ USERS_DB = [
     },
     {
         'id': 2,
-        'username': 'Huyen',
+        'username': 'nhanvien',
         'password': generate_password_hash('123456'),
         'role': 'viewer',
     },
 ]
-
-
-def format_date_str(date_str):
-  if not date_str:
-    return ''
-  try:
-    if 'T' in str(date_str):
-      date_str = str(date_str).split('T')[0]
-    dt = datetime.strptime(date_str.strip(), '%Y-%m-%d')
-    return dt.strftime('%d/%m/%Y')
-  except Exception:
-    return str(date_str)
-
-
-def get_all_purchases():
-  try:
-    response = requests.get(WEB_APP_URL, timeout=15)
-    if response.status_code == 200:
-      raw_data = response.json()
-      normalized_data = []
-      if isinstance(raw_data, list):
-        for item in raw_data:
-          new_item = {}
-          for k, v in item.items():
-            new_item[str(k).lower().strip()] = v
-          normalized_data.append(new_item)
-      return normalized_data
-  except Exception as e:
-    print(f'Lỗi kết nối Google Sheets (GET): {e}')
-  return []
 
 
 @app.route('/')
@@ -102,7 +95,7 @@ def logout():
   return redirect(url_for('login'))
 
 
-# --- QUẢN LÝ TÀI KHOẢN (DÀNH CHO ADMIN) ---
+# --- QUẢN LÝ TÀI KHOẢN (ADMIN) ---
 @app.route('/users')
 def list_users():
   if 'user_id' not in session or session.get('role') != 'admin':
@@ -145,7 +138,7 @@ def add_user():
   return render_template('add_user.html')
 
 
-# --- QUẢN LÝ ĐƠN HÀNG ---
+# --- QUẢN LÝ ĐƠN HÀNG (TRUY VẤN TRỰC TIẾP TỪ SUPABASE) ---
 @app.route('/purchases')
 def list_purchases():
   if 'user_id' not in session:
@@ -154,42 +147,56 @@ def list_purchases():
   search_query = request.args.get('q', '').strip().lower()
   status_filter = request.args.get('status', '').strip()
 
-  purchases = get_all_purchases()
+  # Lấy dữ liệu từ Supabase sắp xếp theo ID mới nhất
+  purchases_query = Purchase.query.order_by(Purchase.id.desc()).all()
 
   filtered_purchases = []
-  for p in reversed(purchases):
-    if not str(p.get('id', '')):
-      continue
+  for p in purchases_query:
+    # Tự động đồng bộ trạng thái nếu có ngày nhận thực tế
+    p_status = (
+        'Đã nhận'
+        if p.received_date
+        else (p.status if p.status else 'Chưa nhận')
+    )
 
-    received_date_raw = str(p.get('received_date', '')).strip()
-    if received_date_raw and received_date_raw.lower() not in [
-        'none',
-        'nan',
-        '',
-        'chưa',
-    ]:
-      p['status'] = 'Đã nhận'
-    else:
-      if not p.get('status') or p.get('status').strip() == '':
-        p['status'] = 'Chưa nhận'
+    p_dict = {
+        'id': p.id,
+        'cost_code': p.cost_code or '',
+        'purpose': p.purpose or '',
+        'item_code': p.item_code or '',
+        'item_name': p.item_name or '',
+        'po_number': p.po_number or '',
+        'supplier': p.supplier or '',
+        'unit': p.unit or '',
+        'quantity': p.quantity or 0,
+        'unit_price': float(p.unit_price) if p.unit_price else 0,
+        'sc_received_date': (
+            p.sc_received_date.strftime('%d/%m/%Y')
+            if p.sc_received_date
+            else ''
+        ),
+        'expected_date': (
+            p.expected_date.strftime('%d/%m/%Y') if p.expected_date else ''
+        ),
+        'status': p_status,
+        'received_date': (
+            p.received_date.strftime('%d/%m/%Y') if p.received_date else ''
+        ),
+        'evaluation': p.evaluation or '',
+    }
 
-    p['sc_received_date'] = format_date_str(p.get('sc_received_date', ''))
-    p['expected_date'] = format_date_str(p.get('expected_date', ''))
-    p['received_date'] = format_date_str(p.get('received_date', ''))
-
-    if status_filter and str(p.get('status', '')) != status_filter:
+    if status_filter and p_dict['status'] != status_filter:
       continue
 
     if search_query:
       combined_text = (
-          f"{p.get('item_code', '')} {p.get('item_name', '')}"
-          f" {p.get('cost_code', '')} {p.get('purpose', '')}"
-          f" {p.get('po_number', '')} {p.get('supplier', '')}"
+          f"{p_dict['item_code']} {p_dict['item_name']} {p_dict['cost_code']}"
+          f" {p_dict['purpose']} {p_dict['po_number']} {p_dict['supplier']}"
       ).lower()
       if search_query not in combined_text:
         continue
 
-    filtered_purchases.append(p)
+    filtered_purchases.append(p_dict)
 
   return render_template(
       'purchases.html',
@@ -204,7 +211,7 @@ def export_purchases_excel():
   if 'user_id' not in session:
     return redirect(url_for('login'))
 
-  purchases = get_all_purchases()
+  purchases_query = Purchase.query.order_by(Purchase.id.desc()).all()
 
   wb = openpyxl.Workbook()
   ws = wb.active
@@ -230,24 +237,36 @@ def export_purchases_excel():
   ]
   ws.append(headers)
 
-  for p in purchases:
+  for p in purchases_query:
+    qty = p.quantity or 0
+    price = float(p.unit_price) if p.unit_price else 0
+    total = qty * price
+
     row = [
-        p.get('id', ''),
-        p.get('cost_code', ''),
-        p.get('purpose', ''),
-        p.get('item_code', ''),
-        p.get('item_name', ''),
-        p.get('po_number', ''),
-        p.get('supplier', ''),
-        p.get('unit', ''),
-        p.get('quantity', ''),
-        p.get('unit_price', ''),
-        p.get('total_price', ''),
-        format_date_str(p.get('sc_received_date', '')),
-        format_date_str(p.get('expected_date', '')),
-        p.get('status', ''),
-        format_date_str(p.get('received_date', '')),
-        p.get('evaluation', ''),
+        p.id,
+        p.cost_code or '',
+        p.purpose or '',
+        p.item_code or '',
+        p.item_name or '',
+        p.po_number or '',
+        p.supplier or '',
+        p.unit or '',
+        qty,
+        price,
+        total,
+        (
+            p.sc_received_date.strftime('%d/%m/%Y')
+            if p.sc_received_date
+            else ''
+        ),
+        p.expected_date.strftime('%d/%m/%Y') if p.expected_date else '',
+        (
+            'Đã nhận'
+            if p.received_date
+            else (p.status if p.status else 'Chưa nhận')
+        ),
+        p.received_date.strftime('%d/%m/%Y') if p.received_date else '',
+        p.evaluation or '',
     ]
     ws.append(row)
 
@@ -272,60 +291,44 @@ def add_purchase():
     return redirect(url_for('list_purchases'))
 
   if request.method == 'POST':
-    purchases = get_all_purchases()
-    new_id = len(purchases) + 1
-
-    cost_code = request.form.get('cost_code', '')
-    purpose = request.form.get('purpose', '')
-    item_code = request.form.get('item_code', '')
-    item_name = request.form['item_name']
-    po_number = request.form['po_number']
-    supplier = request.form['supplier']
-    unit = request.form.get('unit', '')
-    quantity = int(request.form['quantity'])
-    unit_price = float(request.form['unit_price'])
-
-    sc_received_date = request.form.get('sc_received_date', '')
-    expected_date = request.form.get('expected_date', '')
-    received_date = request.form.get('received_date', '')
-    evaluation = request.form.get('evaluation', 'chưa')
-
-    payload = {
-        'action': 'add',
-        'id': new_id,
-        'cost_code': cost_code,
-        'purpose': purpose,
-        'item_code': item_code,
-        'item_name': item_name,
-        'po_number': po_number,
-        'supplier': supplier,
-        'unit': unit,
-        'quantity': quantity,
-        'unit_price': unit_price,
-        'sc_received_date': sc_received_date,
-        'expected_date': expected_date,
-        'received_date': received_date,
-        'evaluation': evaluation,
-    }
-
     try:
-      response = requests.post(WEB_APP_URL, json=payload, timeout=15)
-      if response.status_code == 200:
-        res_json = response.json()
-        if res_json.get('status') == 'success':
-          flash('Thêm đơn mua hàng thành công lên Google Sheets!', 'success')
-        else:
-          flash(
-              f"Lỗi từ Google Sheets: {res_json.get('message', 'Không rõ')}",
-              'danger',
-          )
-      else:
-        flash(
-            f'Lỗi kết nối Google Sheets (HTTP Status {response.status_code})',
-            'danger',
-        )
+      sc_date = (
+          datetime.strptime(request.form['sc_received_date'], '%Y-%m-%d').date()
+          if request.form.get('sc_received_date')
+          else None
+      )
+      exp_date = (
+          datetime.strptime(request.form['expected_date'], '%Y-%m-%d').date()
+          if request.form.get('expected_date')
+          else None
+      )
+      rec_date = (
+          datetime.strptime(request.form['received_date'], '%Y-%m-%d').date()
+          if request.form.get('received_date')
+          else None
+      )
+
+      new_p = Purchase(
+          cost_code=request.form.get('cost_code', ''),
+          purpose=request.form.get('purpose', ''),
+          item_code=request.form.get('item_code', ''),
+          item_name=request.form['item_name'],
+          po_number=request.form['po_number'],
+          supplier=request.form['supplier'],
+          unit=request.form.get('unit', ''),
+          quantity=int(request.form['quantity']),
+          unit_price=float(request.form['unit_price']),
+          sc_received_date=sc_date,
+          expected_date=exp_date,
+          received_date=rec_date,
+          evaluation=request.form.get('evaluation', 'chưa'),
+      )
+      db.session.add(new_p)
+      db.session.commit()
+      flash('Thêm đơn mua hàng thành công vào Supabase!', 'success')
     except Exception as e:
-      flash(f'Lỗi khi lưu lên Google Sheets: {e}', 'danger')
+      db.session.rollback()
+      flash(f'Lỗi khi lưu vào database: {e}', 'danger')
 
     return redirect(url_for('list_purchases'))
 
@@ -338,82 +341,72 @@ def edit_purchase(id):
     flash('Bạn không có quyền chỉnh sửa đơn hàng này!', 'danger')
     return redirect(url_for('list_purchases'))
 
-  purchases = get_all_purchases()
-  purchase = next((p for p in purchases if int(p.get('id', 0)) == id), None)
+  p = Purchase.query.get_or_404(id)
 
-  if not purchase:
-    flash('Không tìm thấy đơn hàng cần sửa!', 'danger')
-    return redirect(url_for('list_purchases'))
-
-  # Xử lý chuẩn hóa ngày tháng về định dạng YYYY-MM-DD để hiển thị chuẩn vào thẻ input type="date"
-  for date_field in ['sc_received_date', 'expected_date', 'received_date']:
-    val = str(purchase.get(date_field, '')).strip()
-    if val and val.lower() not in ['none', 'nan', '']:
-      if 'T' in val:
-        val = val.split('T')[0]
-      elif len(val) == 10 and val[2] == '/' and val[5] == '/':
-        parts = val.split('/')
-        val = f'{parts[2]}-{parts[1]}-{parts[0]}'
-      purchase[date_field] = val
-    else:
-      purchase[date_field] = ''
+  # Chuyển đổi dữ liệu ngày tháng sang định dạng YYYY-MM-DD để hiển thị chuẩn vào form
+  purchase_dict = {
+      'id': p.id,
+      'cost_code': p.cost_code or '',
+      'purpose': p.purpose or '',
+      'item_code': p.item_code or '',
+      'item_name': p.item_name or '',
+      'po_number': p.po_number or '',
+      'supplier': p.supplier or '',
+      'unit': p.unit or '',
+      'quantity': p.quantity or 0,
+      'unit_price': float(p.unit_price) if p.unit_price else 0,
+      'sc_received_date': (
+          p.sc_received_date.strftime('%Y-%m-%d')
+          if p.sc_received_date
+          else ''
+      ),
+      'expected_date': (
+          p.expected_date.strftime('%Y-%m-%d') if p.expected_date else ''
+      ),
+      'received_date': (
+          p.received_date.strftime('%Y-%m-%d') if p.received_date else ''
+      ),
+      'evaluation': p.evaluation or '',
+  }
 
   if request.method == 'POST':
-    cost_code = request.form.get('cost_code', '')
-    purpose = request.form.get('purpose', '')
-    item_code = request.form.get('item_code', '')
-    item_name = request.form['item_name']
-    po_number = request.form['po_number']
-    supplier = request.form['supplier']
-    unit = request.form.get('unit', '')
-    quantity = int(request.form['quantity'])
-    unit_price = float(request.form['unit_price'])
-
-    sc_received_date = request.form.get('sc_received_date', '')
-    expected_date = request.form.get('expected_date', '')
-    received_date = request.form.get('received_date', '')
-    evaluation = request.form.get('evaluation', 'chưa')
-
-    payload = {
-        'action': 'update',
-        'id': id,
-        'cost_code': cost_code,
-        'purpose': purpose,
-        'item_code': item_code,
-        'item_name': item_name,
-        'po_number': po_number,
-        'supplier': supplier,
-        'unit': unit,
-        'quantity': quantity,
-        'unit_price': unit_price,
-        'sc_received_date': sc_received_date,
-        'expected_date': expected_date,
-        'received_date': received_date,
-        'evaluation': evaluation,
-    }
-
     try:
-      response = requests.post(WEB_APP_URL, json=payload, timeout=15)
-      if response.status_code == 200:
-        res_json = response.json()
-        if res_json.get('status') == 'success':
-          flash('Cập nhật đơn mua hàng thành công!', 'success')
-        else:
-          flash(
-              f"Lỗi cập nhật từ Google Sheets: {res_json.get('message', 'Không rõ')}",
-              'danger',
-          )
-      else:
-        flash(
-            f'Lỗi kết nối Google Sheets khi cập nhật (HTTP {response.status_code})',
-            'danger',
-        )
+      p.cost_code = request.form.get('cost_code', '')
+      p.purpose = request.form.get('purpose', '')
+      p.item_code = request.form.get('item_code', '')
+      p.item_name = request.form['item_name']
+      p.po_number = request.form['po_number']
+      p.supplier = request.form['supplier']
+      p.unit = request.form.get('unit', '')
+      p.quantity = int(request.form['quantity'])
+      p.unit_price = float(request.form['unit_price'])
+
+      p.sc_received_date = (
+          datetime.strptime(request.form['sc_received_date'], '%Y-%m-%d').date()
+          if request.form.get('sc_received_date')
+          else None
+      )
+      p.expected_date = (
+          datetime.strptime(request.form['expected_date'], '%Y-%m-%d').date()
+          if request.form.get('expected_date')
+          else None
+      )
+      p.received_date = (
+          datetime.strptime(request.form['received_date'], '%Y-%m-%d').date()
+          if request.form.get('received_date')
+          else None
+      )
+      p.evaluation = request.form.get('evaluation', 'chưa')
+
+      db.session.commit()
+      flash('Cập nhật đơn mua hàng thành công!', 'success')
     except Exception as e:
-      flash(f'Lỗi khi cập nhật Google Sheets: {e}', 'danger')
+      db.session.rollback()
+      flash(f'Lỗi khi cập nhật database: {e}', 'danger')
 
     return redirect(url_for('list_purchases'))
 
-  return render_template('edit_purchase.html', purchase=purchase)
+  return render_template('edit_purchase.html', purchase=purchase_dict)
 
 
 if __name__ == '__main__':

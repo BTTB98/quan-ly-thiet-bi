@@ -27,6 +27,19 @@
 <body>
     <div class="login-card">
         <h3 class="text-center mb-4 text-primary">Đăng Nhập Hệ Thống</h3>
+
+        <!-- Hiển thị thông báo lỗi/thành công nếu có -->
+        <with get_flashed_messages(with_categories=true) as messages:>
+            <if messages:>
+                <for category, message in messages:>
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <endif
+            <endif>
+        <endwith>
+
         <form method="POST">
             <div class="mb-3">
                 <label for="username" class="form-label">Tên đăng nhập</label>

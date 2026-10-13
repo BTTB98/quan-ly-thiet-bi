@@ -42,23 +42,29 @@ class Purchase(db.Model):
     status = db.Column(db.String(50), default='Chưa nhận')
     evaluation = db.Column(db.Text, default='chưa')
 
-# Danh sách tài khoản hệ thống (Admin / Viewer)
+# Danh sách tài khoản hệ thống (admin / ketoan / nhanvien)
 USERS_DB = [
     {
         'id': 1,
         'username': 'admin',
         'password': generate_password_hash('admin123'),
-        'role': 'admin',
+        'role': 'admin',  # Toàn quyền
     },
     {
         'id': 2,
+        'username': 'ketoan',
+        'password': generate_password_hash('123456'),
+        'role': 'editor',  # Quyền: Thêm đơn, sửa ngày dự kiến, không sửa cái khác, không tải Excel
+    },
+    {
+        'id': 3,
         'username': 'nhanvien',
         'password': generate_password_hash('123456'),
-        'role': 'viewer',
+        'role': 'viewer',  # Chỉ xem
     },
 ]
 
-# Hàm tự động tính trạng thái thông minh (Ưu tiên kiểm tra quá hạn và đã nhận)
+# Hàm tự động tính trạng thái thông minh
 def calculate_status(p):
     # Nếu chưa nhận hàng (chưa có ngày nhận thực tế) và ngày hiện tại lớn hơn ngày dự kiến -> Trễ hẹn
     if p.expected_date and date.today() > p.expected_date and (not p.received_date):
@@ -152,7 +158,9 @@ def list_purchases():
 
 @app.route('/purchases/add', methods=['GET', 'POST'])
 def add_purchase():
-    if 'user_id' not in session or session.get('role') != 'admin':
+    role = session.get('role')
+    # Cho phép cả admin và editor (ketoan) thêm đơn hàng mới
+    if 'user_id' not in session or role not in ['admin', 'editor']:
         flash('Bạn không có quyền thực hiện chức năng này!', 'danger')
         return redirect(url_for('list_purchases'))
         
@@ -190,7 +198,9 @@ def add_purchase():
 
 @app.route('/purchases/edit/<int:id>', methods=['GET', 'POST'])
 def edit_purchase(id):
-    if 'user_id' not in session or session.get('role') != 'admin':
+    role = session.get('role')
+    # Cho phép admin và editor truy cập form sửa
+    if 'user_id' not in session or role not in ['admin', 'editor']:
         flash('Bạn không có quyền thực hiện chức năng này!', 'danger')
         return redirect(url_for('list_purchases'))
         
@@ -198,22 +208,24 @@ def edit_purchase(id):
     
     if request.method == 'POST':
         try:
-            p.cost_code = request.form.get('cost_code', '')
-            p.purpose = request.form.get('purpose', '')
-            p.item_code = request.form.get('item_code', '')
-            p.item_name = request.form['item_name']
-            p.po_number = request.form['po_number']
-            p.supplier = request.form['supplier']
-            p.unit = request.form.get('unit', '')
-            p.quantity = int(request.form['quantity'])
-            p.unit_price = float(request.form['unit_price'])
+            if role == 'admin':
+                # Admin được sửa tất cả các trường
+                p.cost_code = request.form.get('cost_code', '')
+                p.purpose = request.form.get('purpose', '')
+                p.item_code = request.form.get('item_code', '')
+                p.item_name = request.form['item_name']
+                p.po_number = request.form['po_number']
+                p.supplier = request.form['supplier']
+                p.unit = request.form.get('unit', '')
+                p.quantity = int(request.form['quantity'])
+                p.unit_price = float(request.form['unit_price'])
+                p.sc_received_date = datetime.strptime(request.form['sc_received_date'], '%Y-%m-%d').date() if request.form.get('sc_received_date') else None
+                p.received_date = datetime.strptime(request.form['received_date'], '%Y-%m-%d').date() if request.form.get('received_date') else None
+                p.status = request.form.get('status', 'Chưa nhận')
+                p.evaluation = request.form.get('evaluation', 'chưa')
             
-            p.sc_received_date = datetime.strptime(request.form['sc_received_date'], '%Y-%m-%d').date() if request.form.get('sc_received_date') else None
+            # Cả admin và editor đều được phép cập nhật ngày dự kiến
             p.expected_date = datetime.strptime(request.form['expected_date'], '%Y-%m-%d').date() if request.form.get('expected_date') else None
-            p.received_date = datetime.strptime(request.form['received_date'], '%Y-%m-%d').date() if request.form.get('received_date') else None
-            
-            p.status = request.form.get('status', 'Chưa nhận')
-            p.evaluation = request.form.get('evaluation', 'chưa')
             
             db.session.commit()
             flash('Cập nhật đơn hàng thành công!', 'success')
@@ -226,8 +238,10 @@ def edit_purchase(id):
 
 @app.route('/purchases/export')
 def export_purchases_excel():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    # Chặn tài khoản 'editor' (ketoan) tải file excel
+    if 'user_id' not in session or session.get('role') == 'editor':
+        flash('Bạn không có quyền tải file Excel!', 'danger')
+        return redirect(url_for('list_purchases'))
     
     purchases = Purchase.query.order_by(Purchase.id.desc()).all()
     

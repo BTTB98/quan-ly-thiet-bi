@@ -57,16 +57,18 @@
         <div class="card shadow-sm mb-4">
             <div class="card-body">
                 <form method="GET" action="{{ url_for('list_purchases') }}" class="row g-3">
-                    <div class="col-md-7">
+                    <div class="col-md-6">
                         <div class="input-group">
                             <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
                             <input type="text" class="form-control" name="q" value="{{ search_query }}" placeholder="Tìm kiếm theo mã vật tư, tên vật tư, số PO, nhà cung cấp...">
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <select name="status" class="form-select">
                             <option value="">-- Tất cả trạng thái --</option>
-                            <option value="Đã nhận" {% if status_filter == 'Đã nhận' %}selected{% endif %}>Đã nhận</option>
+                            <option value="Đã giao" {% if status_filter == 'Đã giao' %}selected{% endif %}>Đã giao</option>
+                            <option value="Nhận 1 phần" {% if status_filter == 'Nhận 1 phần' %}selected{% endif %}>Nhận 1 phần</option>
+                            <option value="Trễ hẹn" {% if status_filter == 'Trễ hẹn' %}selected{% endif %}>Trễ hẹn</option>
                             <option value="Chưa nhận" {% if status_filter == 'Chưa nhận' %}selected{% endif %}>Chưa nhận</option>
                         </select>
                     </div>
@@ -125,8 +127,12 @@
                                     <td>{{ p.sc_received_date }}</td>
                                     <td>{{ p.expected_date }}</td>
                                     <td>
-                                        {% if p.status == 'Đã nhận' %}
-                                            <span class="badge bg-success px-2 py-1">Đã nhận</span>
+                                        {% if p.status == 'Đã giao' %}
+                                            <span class="badge bg-success px-2 py-1">Đã giao</span>
+                                        {% elif p.status == 'Nhận 1 phần' %}
+                                            <span class="badge bg-info text-dark px-2 py-1">Nhận 1 phần</span>
+                                        {% elif p.status == 'Trễ hẹn' %}
+                                            <span class="badge bg-danger px-2 py-1">Trễ hẹn</span>
                                         {% else %}
                                             <span class="badge bg-warning text-dark px-2 py-1">Chưa nhận</span>
                                         {% endif %}

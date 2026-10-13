@@ -60,8 +60,8 @@ USERS_DB = [
 
 # Hàm tự động tính trạng thái thông minh
 def calculate_status(p):
-    # Nếu đã có ngày nhận thực tế, tự động là Đã giao
-    if p.received_date:
+    # Nếu đã có ngày nhận thực tế (kiểm tra an toàn không rỗng và khác None)
+    if p.received_date and str(p.received_date).strip() != '' and str(p.received_date).lower() != 'none':
         return 'Đã giao'
         
     if p.status in ['Đã giao', 'Hoàn thành']:

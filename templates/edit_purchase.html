@@ -36,7 +36,6 @@
                 </div>
                 {% endif %}
 
-                <!-- Flash messages -->
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
@@ -63,14 +62,21 @@
                         <input type="text" class="form-control" name="item_name" value="{{ p.item_name }}" required {% if session.get('role') == 'editor' %}disabled{% endif %}>
                     </div>
 
-                    <!-- Số PO & Mục Đích -->
+                    <!-- Người Yêu Cầu & Số PO -->
+                    <div class="col-md-4">
+                        <label class="form-label">Người Yêu Cầu</label>
+                        <input type="text" class="form-control" name="requester" value="{{ p.requester or '' }}" {% if session.get('role') == 'editor' %}disabled{% endif %}>
+                    </div>
                     <div class="col-md-4">
                         <label class="form-label">Số PO *</label>
                         <input type="text" class="form-control" name="po_number" value="{{ p.po_number or '' }}" required {% if session.get('role') == 'editor' %}disabled{% endif %}>
                     </div>
-                    <div class="col-md-8">
+                    <div class="col-md-4"></div>
+
+                    <!-- Mục Đích Sử Dụng -->
+                    <div class="col-12">
                         <label class="form-label">Mục Đích Sử Dụng</label>
-                        <input type="text" class="form-control" name="purpose" value="{{ p.purpose or '' }}" {% if session.get('role') == 'editor' %}disabled{% endif %}>
+                        <textarea class="form-control" name="purpose" rows="2" {% if session.get('role') == 'editor' %}disabled{% endif %}>{{ p.purpose or '' }}</textarea>
                     </div>
 
                     <!-- Nhà Cung Cấp, ĐVT, Số Lượng, Đơn Giá -->
@@ -91,7 +97,7 @@
                         <input type="number" step="any" class="form-control" name="unit_price" value="{{ p.unit_price if p.unit_price is not none else '' }}" {% if session.get('role') == 'editor' %}disabled{% endif %}>
                     </div>
 
-                    <!-- Các Ngày Tháng (Ngày Dự Kiến nổi bật cho editor) -->
+                    <!-- Các Ngày Tháng -->
                     <div class="col-md-4">
                         <label class="form-label">Ngày SC Nhận Phiếu YC</label>
                         <input type="date" class="form-control" name="sc_received_date" value="{{ p.sc_received_date.strftime('%Y-%m-%d') if p.sc_received_date else '' }}" {% if session.get('role') == 'editor' %}disabled{% endif %}>

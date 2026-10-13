@@ -28,14 +28,15 @@ class Purchase(db.Model):
     __tablename__ = 'purchases'
     id = db.Column(db.Integer, primary_key=True)
     cost_code = db.Column(db.String(100))
-    purpose = db.Column(db.Text)
+    requester = db.Column(db.String(100))  # Cột mới: Người yêu cầu (chỉ lưu DB)
+    purpose = db.Column(db.Text)            # Mục đích (chỉ lưu DB, không hiện ở bảng chính)
     item_code = db.Column(db.String(100))
     item_name = db.Column(db.Text, nullable=False)
     po_number = db.Column(db.String(100), nullable=False)
-    supplier = db.Column(db.String(255), nullable=True)  # Cho phép bỏ trống
+    supplier = db.Column(db.String(255), nullable=True)
     unit = db.Column(db.String(50))
     quantity = db.Column(db.Integer, nullable=False)
-    unit_price = db.Column(db.Numeric(15, 2), nullable=True)  # Cho phép bỏ trống
+    unit_price = db.Column(db.Numeric(15, 2), nullable=True)
     sc_received_date = db.Column(db.Date)
     expected_date = db.Column(db.Date)
     received_date = db.Column(db.Date)
@@ -52,7 +53,7 @@ USERS_DB = [
     },
     {
         'id': 2,
-        'username': 'Huyen',
+        'username': 'ketoan',
         'password': generate_password_hash('123456'),
         'role': 'editor',  # Thêm đơn, sửa ngày dự kiến, không sửa cái khác, không tải Excel
     },
@@ -66,11 +67,9 @@ USERS_DB = [
 
 # Hàm tự động tính trạng thái thông minh
 def calculate_status(p):
-    # Nếu chưa nhận hàng (chưa có ngày nhận thực tế) và ngày hiện tại lớn hơn ngày dự kiến -> Trễ hẹn
     if p.expected_date and date.today() > p.expected_date and (not p.received_date):
         return 'Trễ hẹn'
         
-    # Nếu đã có trạng thái thủ công hợp lệ thì ưu tiên hiển thị
     if p.status and p.status in ['Đã giao', 'Nhận 1 phần', 'Hoàn thành', 'Trễ hẹn']:
         return p.status
         
@@ -121,6 +120,7 @@ def list_purchases():
         p_dict = {
             'id': p.id,
             'cost_code': p.cost_code or '',
+            'requester': p.requester or '',
             'purpose': p.purpose or '',
             'item_code': p.item_code or '',
             'item_name': p.item_name or '',
@@ -142,7 +142,7 @@ def list_purchases():
         if search_query:
             combined_text = (
                 f"{p_dict['item_code']} {p_dict['item_name']} {p_dict['cost_code']} "
-                f"{p_dict['purpose']} {p_dict['po_number']} {p_dict['supplier']}"
+                f"{p_dict['requester']} {p_dict['purpose']} {p_dict['po_number']} {p_dict['supplier']}"
             ).lower()
             if search_query not in combined_text:
                 continue
@@ -174,6 +174,7 @@ def add_purchase():
             
             new_p = Purchase(
                 cost_code=request.form.get('cost_code', ''),
+                requester=request.form.get('requester', ''),
                 purpose=request.form.get('purpose', ''),
                 item_code=request.form.get('item_code', ''),
                 item_name=request.form['item_name'],
@@ -211,6 +212,7 @@ def edit_purchase(id):
         try:
             if role == 'admin':
                 p.cost_code = request.form.get('cost_code', '')
+                p.requester = request.form.get('requester', '')
                 p.purpose = request.form.get('purpose', '')
                 p.item_code = request.form.get('item_code', '')
                 p.item_name = request.form['item_name']
@@ -224,7 +226,6 @@ def edit_purchase(id):
                 p.status = request.form.get('status', 'Chưa nhận')
                 p.evaluation = request.form.get('evaluation', 'chưa')
             
-            # Cả admin và editor đều được phép cập nhật ngày dự kiến
             p.expected_date = datetime.strptime(request.form['expected_date'], '%Y-%m-%d').date() if request.form.get('expected_date') else None
             
             db.session.commit()
@@ -249,7 +250,7 @@ def export_purchases_excel():
     ws.title = "Danh Sach Don Hang"
     
     headers = [
-        "ID", "Mã Chi Phí", "Mục Đích", "Mã Vật Tư", "Tên Vật Tư", 
+        "ID", "Mã Chi Phí", "Người Yêu Cầu", "Mục Đích", "Mã Vật Tư", "Tên Vật Tư", 
         "Số PO", "Nhà Cung Cấp", "ĐVT", "Số Lượng", "Đơn Giá", 
         "Thành Tiền", "Ngày SC Nhận", "Ngày Dự Kiến", "Ngày Thực Tế", 
         "Trạng Thái", "Đánh Giá"
@@ -262,6 +263,7 @@ def export_purchases_excel():
         ws.append([
             p.id,
             p.cost_code or '',
+            p.requester or '',
             p.purpose or '',
             p.item_code or '',
             p.item_name or '',

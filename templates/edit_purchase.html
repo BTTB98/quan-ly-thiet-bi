@@ -32,7 +32,7 @@
             <div class="card-body">
                 {% if session.get('role') == 'editor' %}
                 <div class="alert alert-info py-2" role="alert">
-                    <i class="fas fa-info-circle me-1"></i> Bạn đang đăng nhập bằng tài khoản Kế toán: Bạn <strong>chỉ được phép sửa Ngày Dự Kiến Hàng Về</strong>, các thông tin khác sẽ bị khóa.
+                    <i class="fas fa-info-circle me-1"></i> Tài khoản Kế toán: Bạn <strong>chỉ được phép sửa Ngày Dự Kiến Hàng Về</strong>, các thông tin khác sẽ bị khóa.
                 </div>
                 {% endif %}
 
@@ -49,79 +49,63 @@
                 {% endwith %}
 
                 <form method="POST" class="row g-3">
-                    <!-- Mã Chi Phí -->
-                    <div class="col-md-6">
+                    <!-- Hàng 1: Mã Chi Phí, Mã Vật Tư, Tên Vật Tư -->
+                    <div class="col-md-3">
                         <label class="form-label">Mã Chi Phí (Cost Code)</label>
                         <input type="text" class="form-control" name="cost_code" value="{{ p.cost_code or '' }}" {% if session.get('role') == 'editor' %}disabled{% endif %}>
                     </div>
-
-                    <!-- Số PO -->
-                    <div class="col-md-6">
-                        <label class="form-label">Số PO</label>
-                        <input type="text" class="form-control" name="po_number" value="{{ p.po_number or '' }}" {% if session.get('role') == 'editor' %}disabled{% endif %}>
-                    </div>
-
-                    <!-- Mục Đích -->
-                    <div class="col-12">
-                        <label class="form-label">Mục Đích Sử Dụng</label>
-                        <textarea class="form-control" name="purpose" rows="2" {% if session.get('role') == 'editor' %}disabled{% endif %}>{{ p.purpose or '' }}</textarea>
-                    </div>
-
-                    <!-- Mã Vật Tư -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Mã Vật Tư</label>
                         <input type="text" class="form-control" name="item_code" value="{{ p.item_code or '' }}" {% if session.get('role') == 'editor' %}disabled{% endif %}>
                     </div>
-
-                    <!-- Tên Vật Tư -->
-                    <div class="col-md-8">
+                    <div class="col-md-6">
                         <label class="form-label">Tên Vật Tư *</label>
                         <input type="text" class="form-control" name="item_name" value="{{ p.item_name }}" required {% if session.get('role') == 'editor' %}disabled{% endif %}>
                     </div>
 
-                    <!-- Nhà Cung Cấp -->
-                    <div class="col-md-6">
+                    <!-- Số PO & Mục Đích -->
+                    <div class="col-md-4">
+                        <label class="form-label">Số PO *</label>
+                        <input type="text" class="form-control" name="po_number" value="{{ p.po_number or '' }}" required {% if session.get('role') == 'editor' %}disabled{% endif %}>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Mục Đích Sử Dụng</label>
+                        <input type="text" class="form-control" name="purpose" value="{{ p.purpose or '' }}" {% if session.get('role') == 'editor' %}disabled{% endif %}>
+                    </div>
+
+                    <!-- Nhà Cung Cấp, ĐVT, Số Lượng, Đơn Giá -->
+                    <div class="col-md-5">
                         <label class="form-label">Nhà Cung Cấp *</label>
                         <input type="text" class="form-control" name="supplier" value="{{ p.supplier }}" required {% if session.get('role') == 'editor' %}disabled{% endif %}>
                     </div>
-
-                    <!-- ĐVT -->
                     <div class="col-md-2">
                         <label class="form-label">ĐVT</label>
                         <input type="text" class="form-control" name="unit" value="{{ p.unit or '' }}" {% if session.get('role') == 'editor' %}disabled{% endif %}>
                     </div>
-
-                    <!-- Số Lượng -->
                     <div class="col-md-2">
                         <label class="form-label">Số Lượng *</label>
                         <input type="number" class="form-control" name="quantity" value="{{ p.quantity }}" required {% if session.get('role') == 'editor' %}disabled{% endif %}>
                     </div>
-
-                    <!-- Đơn Giá -->
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <label class="form-label">Đơn Giá *</label>
                         <input type="number" step="any" class="form-control" name="unit_price" value="{{ p.unit_price }}" required {% if session.get('role') == 'editor' %}disabled{% endif %}>
                     </div>
 
-                    <!-- Ngày SC Nhận -->
+                    <!-- Các Ngày Tháng (Ngày Dự Kiến nổi bật cho editor) -->
                     <div class="col-md-4">
                         <label class="form-label">Ngày SC Nhận Phiếu YC</label>
                         <input type="date" class="form-control" name="sc_received_date" value="{{ p.sc_received_date.strftime('%Y-%m-%d') if p.sc_received_date else '' }}" {% if session.get('role') == 'editor' %}disabled{% endif %}>
                     </div>
-
-                    <!-- Ngày Dự Kiến (EDITOR ĐƯỢC PHÉP SỬA Ô NÀY) -->
                     <div class="col-md-4">
                         <label class="form-label fw-bold text-primary">Ngày Dự Kiến Hàng Về</label>
                         <input type="date" class="form-control border-primary" name="expected_date" value="{{ p.expected_date.strftime('%Y-%m-%d') if p.expected_date else '' }}">
                     </div>
-
-                    <!-- Ngày Nhận Thực Tế -->
                     <div class="col-md-4">
                         <label class="form-label">Ngày Nhận Thực Tế</label>
                         <input type="date" class="form-control" name="received_date" value="{{ p.received_date.strftime('%Y-%m-%d') if p.received_date else '' }}" {% if session.get('role') == 'editor' %}disabled{% endif %}>
                     </div>
 
-                    <!-- Trạng Thái -->
+                    <!-- Trạng Thái & Đánh Giá -->
                     <div class="col-md-6">
                         <label class="form-label">Trạng Thái</label>
                         <select name="status" class="form-select" {% if session.get('role') == 'editor' %}disabled{% endif %}>
@@ -131,8 +115,6 @@
                             <option value="Trễ hẹn" {% if p.status == 'Trễ hẹn' %}selected{% endif %}>Trễ hẹn</option>
                         </select>
                     </div>
-
-                    <!-- Đánh Giá -->
                     <div class="col-md-6">
                         <label class="form-label">Đánh Giá Vật Tư</label>
                         <input type="text" class="form-control" name="evaluation" value="{{ p.evaluation or 'chưa' }}" {% if session.get('role') == 'editor' %}disabled{% endif %}>

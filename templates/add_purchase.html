@@ -2,108 +2,133 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Thêm Đơn Mua Hàng</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thêm Đơn Mua Hàng Mới</title>
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome cho icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('list_purchases') }}"><i class="fas fa-home me-2"></i>Quản Lý Đơn Mua Hàng</a>
+            <div class="d-flex align-items-center">
+                <span class="text-light me-3">
+                    Xin chào, <strong>{{ session.get('username') }}</strong> (Vai trò: <em>{{ session.get('role') }}</em>)
+                </span>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Đăng xuất</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Nội dung form -->
     <div class="container mt-4 mb-5">
         <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">Thêm Đơn Mua Hàng Mới</h4>
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Thêm Đơn Mua Hàng Mới</h4>
             </div>
             <div class="card-body">
+                <!-- Flash messages -->
                 {% with messages = get_flashed_messages(with_categories=true) %}
-                  {% if messages %}
-                    {% for category, message in messages %}
-                      <div class="alert alert-{{ category }}">{{ message }}</div>
-                    {% endfor %}
-                  {% endif %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
                 {% endwith %}
 
-                <form method="POST">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Mã Chi Phí (Cost Code)</label>
-                            <input type="text" class="form-control" name="cost_code">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Số PO</label>
-                            <input type="text" class="form-control" name="po_number" required>
-                        </div>
+                <form method="POST" class="row g-3">
+                    <!-- Hàng 1: Mã Chi Phí, Mã Vật Tư, Tên Vật Tư -->
+                    <div class="col-md-3">
+                        <label class="form-label">Mã Chi Phí (Cost Code)</label>
+                        <input type="text" class="form-control" name="cost_code" placeholder="Nhập mã chi phí">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Mã Vật Tư</label>
+                        <input type="text" class="form-control" name="item_code" placeholder="Nhập mã vật tư">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Tên Vật Tư *</label>
+                        <input type="text" class="form-control" name="item_name" placeholder="Nhập tên vật tư" required>
                     </div>
 
-                    <div class="mb-3">
+                    <!-- Số PO & Mục Đích -->
+                    <div class="col-md-4">
+                        <label class="form-label">Số PO *</label>
+                        <input type="text" class="form-control" name="po_number" placeholder="Nhập số PO" required>
+                    </div>
+                    <div class="col-md-8">
                         <label class="form-label">Mục Đích Sử Dụng</label>
-                        <textarea class="form-control" name="purpose" rows="2"></textarea>
+                        <input type="text" class="form-control" name="purpose" placeholder="Nhập mục đích sử dụng">
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Mã Vật Tư</label>
-                            <input type="text" class="form-control" name="item_code">
-                        </div>
-                        <div class="col-md-8 mb-3">
-                            <label class="form-label">Tên Vật Tư <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="item_name" required>
-                        </div>
+                    <!-- Nhà Cung Cấp, ĐVT, Số Lượng, Đơn Giá -->
+                    <div class="col-md-5">
+                        <label class="form-label">Nhà Cung Cấp *</label>
+                        <input type="text" class="form-control" name="supplier" placeholder="Nhập tên nhà cung cấp" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">ĐVT</label>
+                        <input type="text" class="form-control" name="unit" placeholder="Ví dụ: Cái, Mét...">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Số Lượng *</label>
+                        <input type="number" class="form-control" name="quantity" placeholder="0" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Đơn Giá *</label>
+                        <input type="number" step="any" class="form-control" name="unit_price" placeholder="0.00" required>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Nhà Cung Cấp <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="supplier" required>
-                        </div>
-                        <div class="col-md-2 mb-3">
-                            <label class="form-label">ĐVT</label>
-                            <input type="text" class="form-control" name="unit">
-                        </div>
-                        <div class="col-md-2 mb-3">
-                            <label class="form-label">Số Lượng <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" name="quantity" required>
-                        </div>
-                        <div class="col-md-2 mb-3">
-                            <label class="form-label">Đơn Giá <span class="text-danger">*</span></label>
-                            <input type="number" step="any" class="form-control" name="unit_price" required>
-                        </div>
+                    <!-- Các Ngày Tháng -->
+                    <div class="col-md-4">
+                        <label class="form-label">Ngày SC Nhận Phiếu YC</label>
+                        <input type="date" class="form-control" name="sc_received_date">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Ngày Dự Kiến Hàng Về</label>
+                        <input type="date" class="form-control" name="expected_date">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Ngày Nhận Thực Tế</label>
+                        <input type="date" class="form-control" name="received_date">
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Ngày SC Nhận Phiếu YC</label>
-                            <input type="date" class="form-control" name="sc_received_date">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Ngày Dự Kiến Hàng Về</label>
-                            <input type="date" class="form-control" name="expected_date">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Ngày Nhận Thực Tế</label>
-                            <input type="date" class="form-control" name="received_date">
-                        </div>
+                    <!-- Trạng Thái & Đánh Giá -->
+                    <div class="col-md-6">
+                        <label class="form-label">Trạng Thái</label>
+                        <select name="status" class="form-select">
+                            <option value="Chưa nhận">Chưa nhận</option>
+                            <option value="Nhận 1 phần">Nhận 1 phần</option>
+                            <option value="Đã giao">Đã giao</option>
+                            <option value="Trễ hẹn">Trễ hẹn</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Đánh Giá Vật Tư</label>
+                        <input type="text" class="form-control" name="evaluation" value="chưa">
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Trạng Thái</label>
-                            <select class="form-select" name="status">
-                                <option value="Chưa nhận">Chưa nhận</option>
-                                <option value="Nhận 1 phần">Nhận 1 phần</option>
-                                <option value="Đã giao">Đã giao</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Đánh Giá Vật Tư</label>
-                            <input type="text" class="form-control" name="evaluation" value="chưa">
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('list_purchases') }}" class="btn btn-secondary">Quay Lại</a>
-                        <button type="submit" class="btn btn-primary">Lưu Đơn Hàng</button>
+                    <!-- Nút bấm -->
+                    <div class="col-12 mt-4 d-flex justify-content-between">
+                        <a href="{{ url_for('list_purchases') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Quay Lại
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4 fw-bold">
+                            <i class="fas fa-save me-1"></i> Lưu Đơn Hàng
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

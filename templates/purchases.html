@@ -16,7 +16,7 @@
             <a class="navbar-brand" href="{{ url_for('index') }}"><i class="fas fa-home me-2"></i>Quản Lý Đơn Mua Hàng</a>
             <div class="d-flex align-items-center">
                 <span class="text-light me-3">
-                    Xin chào, <strong>{{ session.get('username') }}
+                    Xin chào, <strong>{{ session.get('username') }}</strong> (Vai trò: <em>{{ session.get('role') }}</em>)
                 </span>
                 <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Đăng xuất</a>
             </div>
@@ -63,7 +63,7 @@
                     <div class="col-md-6">
                         <div class="input-group">
                             <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
-                            <input type="text" class="form-control" name="q" value="{{ search_query }}" placeholder="Tìm kiếm theo mã vật tư, tên vật tư, số PO, nhà cung cấp...">
+                            <input type="text" class="form-control" name="q" value="{{ search_query }}" placeholder="Tìm kiếm theo mã vật tư, tên vật tư, số PO, nhà cung cấp, người yêu cầu...">
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -90,7 +90,6 @@
                         <thead class="table-dark">
                             <tr>
                                 <th>Mã CP</th>
-                                <th>Mục đích</th>
                                 <th>Mã vật tư</th>
                                 <th style="min-width: 180px;">Tên vật tư</th>
                                 <th>Số PO</th>
@@ -114,7 +113,6 @@
                                 {% for p in purchases %}
                                 <tr>
                                     <td>{{ p.cost_code }}</td>
-                                    <td>{{ p.purpose }}</td>
                                     <td class="fw-bold">{{ p.item_code }}</td>
                                     <td class="text-start">{{ p.item_name }}</td>
                                     <td>{{ p.po_number }}</td>
@@ -153,7 +151,7 @@
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="16" class="text-center py-4 text-muted">Không tìm thấy đơn mua hàng nào phù hợp.</td>
+                                    <td colspan="15" class="text-center py-4 text-muted">Không tìm thấy đơn mua hàng nào phù hợp.</td>
                                 </tr>
                             {% endif %}
                         </tbody>

@@ -58,12 +58,16 @@ USERS_DB = [
     },
 ]
 
-# Hàm tự động tính trạng thái (nếu quá hạn và chưa nhận đủ -> Trễ hẹn)
+# Hàm tự động tính trạng thái thông minh
 def calculate_status(p):
-    if p.received_date or p.status in ['Đã giao', 'Hoàn thành']:
-        return 'Đã giao' if not p.status else p.status
+    # Nếu đã có ngày nhận thực tế, tự động là Đã giao
+    if p.received_date:
+        return 'Đã giao'
+        
+    if p.status in ['Đã giao', 'Hoàn thành']:
+        return p.status
     
-    # Nếu có ngày dự kiến và ngày hiện tại lớn hơn ngày dự kiến
+    # Nếu có ngày dự kiến và ngày hiện tại lớn hơn ngày dự kiến mà chưa nhận
     if p.expected_date and date.today() > p.expected_date:
         return 'Trễ hẹn'
         

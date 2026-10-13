@@ -75,8 +75,8 @@
 
                     <!-- Nhà Cung Cấp, ĐVT, Số Lượng, Đơn Giá -->
                     <div class="col-md-5">
-                        <label class="form-label">Nhà Cung Cấp *</label>
-                        <input type="text" class="form-control" name="supplier" value="{{ p.supplier }}" required {% if session.get('role') == 'editor' %}disabled{% endif %}>
+                        <label class="form-label">Nhà Cung Cấp</label>
+                        <input type="text" class="form-control" name="supplier" value="{{ p.supplier or '' }}" {% if session.get('role') == 'editor' %}disabled{% endif %}>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">ĐVT</label>
@@ -87,8 +87,8 @@
                         <input type="number" class="form-control" name="quantity" value="{{ p.quantity }}" required {% if session.get('role') == 'editor' %}disabled{% endif %}>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Đơn Giá *</label>
-                        <input type="number" step="any" class="form-control" name="unit_price" value="{{ p.unit_price }}" required {% if session.get('role') == 'editor' %}disabled{% endif %}>
+                        <label class="form-label">Đơn Giá</label>
+                        <input type="number" step="any" class="form-control" name="unit_price" value="{{ p.unit_price if p.unit_price is not none else '' }}" {% if session.get('role') == 'editor' %}disabled{% endif %}>
                     </div>
 
                     <!-- Các Ngày Tháng (Ngày Dự Kiến nổi bật cho editor) -->

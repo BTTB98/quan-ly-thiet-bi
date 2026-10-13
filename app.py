@@ -73,7 +73,7 @@ def calculate_status(p):
 def index():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('index.html')
+    return redirect(url_for('list_purchases'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -86,7 +86,7 @@ def login():
             session['username'] = user['username']
             session['role'] = user['role']
             flash('Đăng nhập thành công!', 'success')
-            return redirect(url_for('index'))
+            return redirect(url_for('list_purchases'))
         else:
             flash('Tên đăng nhập hoặc mật khẩu không chính xác!', 'danger')
     return render_template('login.html')
@@ -222,6 +222,58 @@ def edit_purchase(id):
             flash(f'Lỗi khi cập nhật đơn hàng: {e}', 'danger')
             
     return render_template('edit_purchase.html', p=p)
+
+@app.route('/purchases/export')
+def export_purchases_excel():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    purchases = Purchase.query.order_by(Purchase.id.desc()).all()
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Danh Sach Don Hang"
+    
+    headers = [
+        "ID", "Mã Chi Phí", "Mục Đích", "Mã Vật Tư", "Tên Vật Tư", 
+        "Số PO", "Nhà Cung Cấp", "ĐVT", "Số Lượng", "Đơn Giá", 
+        "Thành Tiền", "Ngày SC Nhận", "Ngày Dự Kiến", "Ngày Thực Tế", 
+        "Trạng Thái", "Đánh Giá"
+    ]
+    ws.append(headers)
+    
+    for p in purchases:
+        current_status = calculate_status(p)
+        total_price = float(p.quantity * p.unit_price) if p.quantity and p.unit_price else 0
+        ws.append([
+            p.id,
+            p.cost_code or '',
+            p.purpose or '',
+            p.item_code or '',
+            p.item_name or '',
+            p.po_number or '',
+            p.supplier or '',
+            p.unit or '',
+            p.quantity or 0,
+            float(p.unit_price) if p.unit_price else 0,
+            total_price,
+            p.sc_received_date.strftime('%d/%m/%Y') if p.sc_received_date else '',
+            p.expected_date.strftime('%d/%m/%Y') if p.expected_date else '',
+            p.received_date.strftime('%d/%m/%Y') if p.received_date else '',
+            current_status,
+            p.evaluation or ''
+        ])
+        
+    file_stream = io.BytesIO()
+    wb.save(file_stream)
+    file_stream.seek(0)
+    
+    return send_file(
+        file_stream,
+        as_attachment=True,
+        download_name=f"Danh_Sach_Don_Hang_{date.today().strftime('%d%m%Y')}.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

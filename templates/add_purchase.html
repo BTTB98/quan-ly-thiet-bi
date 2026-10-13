@@ -2,128 +2,108 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thêm Đơn Mua Hàng Mới</title>
-    <!-- Bootstrap 5 CSS -->
+    <title>Thêm Đơn Mua Hàng</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body { background-color: #f8f9fa; }
-        .form-container { background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); max-width: 900px; margin: 40px auto; }
-    </style>
 </head>
-<body>
-
-    <div class="container">
-        <div class="form-container">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="fas fa-plus-circle text-primary"></i> Thêm Đơn Mua Hàng Mới</h2>
-                <a href="{{ url_for('list_purchases') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+<body class="bg-light">
+    <div class="container mt-4 mb-5">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Thêm Đơn Mua Hàng Mới</h4>
             </div>
-
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
+            <div class="card-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
                     {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
+                      <div class="alert alert-{{ category }}">{{ message }}</div>
                     {% endfor %}
-                {% endif %}
-            {% endwith %}
+                  {% endif %}
+                {% endwith %}
 
-            <form method="POST" action="{{ url_for('add_purchase') }}">
-                <div class="row g-3">
-                    <!-- Mã CP -->
-                    <div class="col-md-6">
-                        <label for="cost_code" class="form-label">Mã CP</label>
-                        <input type="text" class="form-control" id="cost_code" name="cost_code" placeholder="Nhập mã CP (nếu có)">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Mã Chi Phí (Cost Code)</label>
+                            <input type="text" class="form-control" name="cost_code">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Số PO</label>
+                            <input type="text" class="form-control" name="po_number" required>
+                        </div>
                     </div>
 
-                    <!-- Mục đích sử dụng -->
-                    <div class="col-md-6">
-                        <label for="purpose" class="form-label">Mục đích sử dụng</label>
-                        <input type="text" class="form-control" id="purpose" name="purpose" placeholder="Nhập mục đích sử dụng">
+                    <div class="mb-3">
+                        <label class="form-label">Mục Đích Sử Dụng</label>
+                        <textarea class="form-control" name="purpose" rows="2"></textarea>
                     </div>
 
-                    <!-- Mã vật tư -->
-                    <div class="col-md-6">
-                        <label for="item_code" class="form-label">Mã vật tư</label>
-                        <input type="text" class="form-control" id="item_code" name="item_code" placeholder="Nhập mã vật tư">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Mã Vật Tư</label>
+                            <input type="text" class="form-control" name="item_code">
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Tên Vật Tư <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="item_name" required>
+                        </div>
                     </div>
 
-                    <!-- Tên vật tư -->
-                    <div class="col-md-6">
-                        <label for="item_name" class="form-label">Tên vật tư <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="item_name" name="item_name" required placeholder="Nhập tên vật tư">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nhà Cung Cấp <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="supplier" required>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">ĐVT</label>
+                            <input type="text" class="form-control" name="unit">
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Số Lượng <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="quantity" required>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Đơn Giá <span class="text-danger">*</span></label>
+                            <input type="number" step="any" class="form-control" name="unit_price" required>
+                        </div>
                     </div>
 
-                    <!-- Số PO -->
-                    <div class="col-md-6">
-                        <label for="po_number" class="form-label">Số PO <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="po_number" name="po_number" required placeholder="Nhập số PO">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Ngày SC Nhận Phiếu YC</label>
+                            <input type="date" class="form-control" name="sc_received_date">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Ngày Dự Kiến Hàng Về</label>
+                            <input type="date" class="form-control" name="expected_date">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Ngày Nhận Thực Tế</label>
+                            <input type="date" class="form-control" name="received_date">
+                        </div>
                     </div>
 
-                    <!-- Nhà cung cấp -->
-                    <div class="col-md-6">
-                        <label for="supplier" class="form-label">Nhà cung cấp <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="supplier" name="supplier" required placeholder="Nhập tên nhà cung cấp">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Trạng Thái</label>
+                            <select class="form-select" name="status">
+                                <option value="Chưa nhận">Chưa nhận</option>
+                                <option value="Nhận 1 phần">Nhận 1 phần</option>
+                                <option value="Đã giao">Đã giao</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Đánh Giá Vật Tư</label>
+                            <input type="text" class="form-control" name="evaluation" value="chưa">
+                        </div>
                     </div>
 
-                    <!-- ĐVT -->
-                    <div class="col-md-4">
-                        <label for="unit" class="form-label">Đơn vị tính (ĐVT)</label>
-                        <input type="text" class="form-control" id="unit" name="unit" placeholder="Cái, Bộ, Kg, Mét...">
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('list_purchases') }}" class="btn btn-secondary">Quay Lại</a>
+                        <button type="submit" class="btn btn-primary">Lưu Đơn Hàng</button>
                     </div>
-
-                    <!-- Số lượng -->
-                    <div class="col-md-4">
-                        <label for="quantity" class="form-label">Số lượng (SL) <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" id="quantity" name="quantity" min="1" required placeholder="0">
-                    </div>
-
-                    <!-- Đơn giá -->
-                    <div class="col-md-4">
-                        <label for="unit_price" class="form-label">Đơn giá <span class="text-danger">*</span></label>
-                        <input type="number" step="any" class="form-control" id="unit_price" name="unit_price" min="0" required placeholder="0">
-                    </div>
-
-                    <!-- Ngày SC nhận phiếu YC -->
-                    <div class="col-md-6">
-                        <label for="sc_received_date" class="form-label">Ngày SC nhận phiếu YC</label>
-                        <input type="date" class="form-control" id="sc_received_date" name="sc_received_date">
-                    </div>
-
-                    <!-- Ngày dự kiến hàng về -->
-                    <div class="col-md-6">
-                        <label for="expected_date" class="form-label">Ngày dự kiến hàng về</label>
-                        <input type="date" class="form-control" id="expected_date" name="expected_date">
-                    </div>
-
-                    <!-- Ngày nhận thực tế -->
-                    <div class="col-md-6">
-                        <label for="received_date" class="form-label">Ngày nhận thực tế</label>
-                        <input type="date" class="form-control" id="received_date" name="received_date">
-                        <div class="form-text text-muted">Nếu điền ngày này, trạng thái sẽ tự động chuyển thành "Đã nhận".</div>
-                    </div>
-
-                    <!-- Đánh giá vật tư -->
-                    <div class="col-md-6">
-                        <label for="evaluation" class="form-label">Đánh giá vật tư</label>
-                        <input type="text" class="form-control" id="evaluation" name="evaluation" value="chưa" placeholder="Đánh giá chất lượng...">
-                    </div>
-
-                    <!-- Nút thao tác -->
-                    <div class="col-12 mt-4 text-end">
-                        <button type="reset" class="btn btn-secondary me-2"><i class="fas fa-redo"></i> Nhập lại</button>
-                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Lưu đơn hàng</button>
-                    </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
-
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -97,7 +97,6 @@
                                 <th>ĐVT</th>
                                 <th>SL</th>
                                 <th>Đơn giá</th>
-                                <th>Thành tiền</th>
                                 <th>Ngày SC nhận</th>
                                 <th>Ngày dự kiến</th>
                                 <th>Trạng thái</th>
@@ -120,11 +119,6 @@
                                     <td>{{ p.unit }}</td>
                                     <td>{{ p.quantity }}</td>
                                     <td class="text-end">{{ "{:,.0f}".format(p.unit_price|float) if p.unit_price else 0 }}</td>
-                                    <td class="text-end fw-bold text-success">
-                                        {% set qty = p.quantity|float if p.quantity else 0 %}
-                                        {% set price = p.unit_price|float if p.unit_price else 0 %}
-                                        {{ "{:,.0f}".format(qty * price) }}
-                                    </td>
                                     <td>{{ p.sc_received_date }}</td>
                                     <td>{{ p.expected_date }}</td>
                                     <td>
@@ -151,7 +145,7 @@
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="15" class="text-center py-4 text-muted">Không tìm thấy đơn mua hàng nào phù hợp.</td>
+                                    <td colspan="14" class="text-center py-4 text-muted">Không tìm thấy đơn mua hàng nào phù hợp.</td>
                                 </tr>
                             {% endif %}
                         </tbody>

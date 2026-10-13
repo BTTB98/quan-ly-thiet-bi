@@ -32,10 +32,10 @@ class Purchase(db.Model):
     item_code = db.Column(db.String(100))
     item_name = db.Column(db.Text, nullable=False)
     po_number = db.Column(db.String(100), nullable=False)
-    supplier = db.Column(db.String(255), nullable=False)
+    supplier = db.Column(db.String(255), nullable=True)  # Cho phép bỏ trống
     unit = db.Column(db.String(50))
     quantity = db.Column(db.Integer, nullable=False)
-    unit_price = db.Column(db.Numeric(15, 2), nullable=False)
+    unit_price = db.Column(db.Numeric(15, 2), nullable=True)  # Cho phép bỏ trống
     sc_received_date = db.Column(db.Date)
     expected_date = db.Column(db.Date)
     received_date = db.Column(db.Date)
@@ -52,9 +52,9 @@ USERS_DB = [
     },
     {
         'id': 2,
-        'username': 'Huyen',
+        'username': 'ketoan',
         'password': generate_password_hash('123456'),
-        'role': 'editor',  # Quyền: Thêm đơn, sửa ngày dự kiến, không sửa cái khác, không tải Excel
+        'role': 'editor',  # Thêm đơn, sửa ngày dự kiến, không sửa cái khác, không tải Excel
     },
     {
         'id': 3,
@@ -159,7 +159,6 @@ def list_purchases():
 @app.route('/purchases/add', methods=['GET', 'POST'])
 def add_purchase():
     role = session.get('role')
-    # Cho phép cả admin và editor (ketoan) thêm đơn hàng mới
     if 'user_id' not in session or role not in ['admin', 'editor']:
         flash('Bạn không có quyền thực hiện chức năng này!', 'danger')
         return redirect(url_for('list_purchases'))
@@ -170,16 +169,19 @@ def add_purchase():
             exp_date = datetime.strptime(request.form['expected_date'], '%Y-%m-%d').date() if request.form.get('expected_date') else None
             rec_date = datetime.strptime(request.form['received_date'], '%Y-%m-%d').date() if request.form.get('received_date') else None
             
+            unit_price_val = float(request.form['unit_price']) if request.form.get('unit_price') else 0.0
+            supplier_val = request.form.get('supplier', '').strip() or None
+            
             new_p = Purchase(
                 cost_code=request.form.get('cost_code', ''),
                 purpose=request.form.get('purpose', ''),
                 item_code=request.form.get('item_code', ''),
                 item_name=request.form['item_name'],
                 po_number=request.form['po_number'],
-                supplier=request.form['supplier'],
+                supplier=supplier_val,
                 unit=request.form.get('unit', ''),
                 quantity=int(request.form['quantity']),
-                unit_price=float(request.form['unit_price']),
+                unit_price=unit_price_val,
                 sc_received_date=sc_date,
                 expected_date=exp_date,
                 received_date=rec_date,
@@ -199,7 +201,6 @@ def add_purchase():
 @app.route('/purchases/edit/<int:id>', methods=['GET', 'POST'])
 def edit_purchase(id):
     role = session.get('role')
-    # Cho phép admin và editor truy cập form sửa
     if 'user_id' not in session or role not in ['admin', 'editor']:
         flash('Bạn không có quyền thực hiện chức năng này!', 'danger')
         return redirect(url_for('list_purchases'))
@@ -209,16 +210,15 @@ def edit_purchase(id):
     if request.method == 'POST':
         try:
             if role == 'admin':
-                # Admin được sửa tất cả các trường
                 p.cost_code = request.form.get('cost_code', '')
                 p.purpose = request.form.get('purpose', '')
                 p.item_code = request.form.get('item_code', '')
                 p.item_name = request.form['item_name']
                 p.po_number = request.form['po_number']
-                p.supplier = request.form['supplier']
+                p.supplier = request.form.get('supplier', '').strip() or None
                 p.unit = request.form.get('unit', '')
                 p.quantity = int(request.form['quantity'])
-                p.unit_price = float(request.form['unit_price'])
+                p.unit_price = float(request.form['unit_price']) if request.form.get('unit_price') else 0.0
                 p.sc_received_date = datetime.strptime(request.form['sc_received_date'], '%Y-%m-%d').date() if request.form.get('sc_received_date') else None
                 p.received_date = datetime.strptime(request.form['received_date'], '%Y-%m-%d').date() if request.form.get('received_date') else None
                 p.status = request.form.get('status', 'Chưa nhận')
@@ -238,7 +238,6 @@ def edit_purchase(id):
 
 @app.route('/purchases/export')
 def export_purchases_excel():
-    # Chặn tài khoản 'editor' (ketoan) tải file excel
     if 'user_id' not in session or session.get('role') == 'editor':
         flash('Bạn không có quyền tải file Excel!', 'danger')
         return redirect(url_for('list_purchases'))

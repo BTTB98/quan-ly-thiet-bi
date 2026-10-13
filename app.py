@@ -58,15 +58,15 @@ USERS_DB = [
     },
 ]
 
-# Hàm tự động tính trạng thái (ưu tiên trạng thái thủ công đã lưu, nếu quá hạn chưa nhận thì tự động là Trễ hẹn)
+# Hàm tự động tính trạng thái thông minh (Ưu tiên kiểm tra quá hạn và đã nhận)
 def calculate_status(p):
-    # Nếu đơn hàng đã có trạng thái thủ công (như 'Đã giao', 'Nhận 1 phần', v.v.), ưu tiên hiển thị trạng thái đó
-    if p.status and p.status in ['Đã giao', 'Nhận 1 phần', 'Hoàn thành']:
-        return p.status
-        
-    # Nếu chưa giao hoặc chưa nhận hoàn toàn, kiểm tra nếu quá ngày dự kiến thì tự động Trễ hẹn
+    # Nếu chưa nhận hàng (chưa có ngày nhận thực tế) và ngày hiện tại lớn hơn ngày dự kiến -> Trễ hẹn
     if p.expected_date and date.today() > p.expected_date and (not p.received_date):
         return 'Trễ hẹn'
+        
+    # Nếu đã có trạng thái thủ công hợp lệ thì ưu tiên hiển thị
+    if p.status and p.status in ['Đã giao', 'Nhận 1 phần', 'Hoàn thành', 'Trễ hẹn']:
+        return p.status
         
     return p.status if p.status else 'Chưa nhận'
 
@@ -212,7 +212,6 @@ def edit_purchase(id):
             p.expected_date = datetime.strptime(request.form['expected_date'], '%Y-%m-%d').date() if request.form.get('expected_date') else None
             p.received_date = datetime.strptime(request.form['received_date'], '%Y-%m-%d').date() if request.form.get('received_date') else None
             
-            # Lưu trực tiếp trạng thái do người dùng chọn thủ công trên form
             p.status = request.form.get('status', 'Chưa nhận')
             p.evaluation = request.form.get('evaluation', 'chưa')
             

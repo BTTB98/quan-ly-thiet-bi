@@ -30,7 +30,6 @@
                 <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Thêm Đơn Mua Hàng Mới</h4>
             </div>
             <div class="card-body">
-                <!-- Flash messages -->
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
@@ -57,17 +56,26 @@
                         <input type="text" class="form-control" name="item_name" placeholder="Nhập tên vật tư" required>
                     </div>
 
-                    <!-- Số PO & Mục Đích -->
+                    <!-- Người Yêu Cầu & Số PO -->
+                    <div class="col-md-4">
+                        <label class="form-label">Người Yêu Cầu</label>
+                        <input type="text" class="form-control" name="requester" placeholder="Nhập tên người yêu cầu">
+                    </div>
                     <div class="col-md-4">
                         <label class="form-label">Số PO *</label>
                         <input type="text" class="form-control" name="po_number" placeholder="Nhập số PO" required>
                     </div>
-                    <div class="col-md-8">
-                        <label class="form-label">Mục Đích Sử Dụng</label>
-                        <input type="text" class="form-control" name="purpose" placeholder="Nhập mục đích sử dụng">
+                    <div class="col-md-4">
+                        <!-- Giữ khoảng trống cân đối -->
                     </div>
 
-                    <!-- Nhà Cung Cấp, ĐVT, Số Lượng, Đơn Giá (Nhà cung cấp & đơn giá không bắt buộc) -->
+                    <!-- Mục Đích Sử Dụng -->
+                    <div class="col-12">
+                        <label class="form-label">Mục Đích Sử Dụng</label>
+                        <textarea class="form-control" name="purpose" rows="2" placeholder="Nhập mục đích sử dụng"></textarea>
+                    </div>
+
+                    <!-- Nhà Cung Cấp, ĐVT, Số Lượng, Đơn Giá -->
                     <div class="col-md-5">
                         <label class="form-label">Nhà Cung Cấp</label>
                         <input type="text" class="form-control" name="supplier" placeholder="Nhập tên nhà cung cấp (có thể trống)">

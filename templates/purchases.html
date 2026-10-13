@@ -16,7 +16,7 @@
             <a class="navbar-brand" href="{{ url_for('index') }}"><i class="fas fa-home me-2"></i>Quản Lý Đơn Mua Hàng</a>
             <div class="d-flex align-items-center">
                 <span class="text-light me-3">
-                    Xin chào, <strong>{{ session.get('username') }}</strong> (Vai trò: <em>{{ session.get('role') }}</em>)
+                    Xin chào, <strong>{{ session.get('username') }}
                 </span>
                 <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Đăng xuất</a>
             </div>

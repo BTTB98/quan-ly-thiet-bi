@@ -2,102 +2,108 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chỉnh sửa đơn hàng</title>
-    <!-- Bootstrap 5 CSS -->
+    <title>Chỉnh Sửa Đơn Mua Hàng</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome cho icon -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-light">
-    <div class="container mt-4 mb-5" style="max-width: 700px;">
+    <div class="container mt-4 mb-5">
         <div class="card shadow">
             <div class="card-header bg-warning text-dark">
-                <h4 class="mb-0"><i class="fas fa-edit me-2"></i>Chỉnh Sửa Đơn Mua Hàng #{{ purchase.id }}</h4>
+                <h4 class="mb-0">Chỉnh Sửa Đơn Mua Hàng #{{ p.id }}</h4>
             </div>
             <div class="card-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                      <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
                 <form method="POST">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Mã CP:</label>
-                            <input type="text" class="form-control" name="cost_code" value="{{ purchase.cost_code }}">
+                            <label class="form-label">Mã Chi Phí (Cost Code)</label>
+                            <input type="text" class="form-control" name="cost_code" value="{{ p.cost_code or '' }}">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Mục đích:</label>
-                            <input type="text" class="form-control" name="purpose" value="{{ purchase.purpose }}">
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Mã vật tư:</label>
-                            <input type="text" class="form-control" name="item_code" value="{{ purchase.item_code }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Tên vật tư (*):</label>
-                            <input type="text" class="form-control" name="item_name" value="{{ purchase.item_name }}" required>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Số PO (*):</label>
-                            <input type="text" class="form-control" name="po_number" value="{{ purchase.po_number }}" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Nhà cung cấp (*):</label>
-                            <input type="text" class="form-control" name="supplier" value="{{ purchase.supplier }}" required>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">ĐVT:</label>
-                            <input type="text" class="form-control" name="unit" value="{{ purchase.unit }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Số lượng (*):</label>
-                            <input type="number" class="form-control" name="quantity" value="{{ purchase.quantity }}" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Đơn giá (*):</label>
-                            <input type="number" step="any" class="form-control" name="unit_price" value="{{ purchase.unit_price }}" required>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Ngày SC nhận phiếu YC:</label>
-                            <input type="date" class="form-control" name="sc_received_date" value="{{ purchase.sc_received_date }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Ngày dự kiến hàng về:</label>
-                            <input type="date" class="form-control" name="expected_date" value="{{ purchase.expected_date }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Ngày nhận thực tế:</label>
-                            <input type="date" class="form-control" name="received_date" value="{{ purchase.received_date }}">
+                            <label class="form-label">Số PO</label>
+                            <input type="text" class="form-control" name="po_number" value="{{ p.po_number }}" required>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Đánh giá vật tư:</label>
-                        <input type="text" class="form-control" name="evaluation" value="{{ purchase.evaluation }}">
+                        <label class="form-label">Mục Đích Sử Dụng</label>
+                        <textarea class="form-control" name="purpose" rows="2">{{ p.purpose or '' }}</textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Mã Vật Tư</label>
+                            <input type="text" class="form-control" name="item_code" value="{{ p.item_code or '' }}">
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Tên Vật Tư <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="item_name" value="{{ p.item_name }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nhà Cung Cấp <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="supplier" value="{{ p.supplier }}" required>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">ĐVT</label>
+                            <input type="text" class="form-control" name="unit" value="{{ p.unit or '' }}">
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Số Lượng <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="quantity" value="{{ p.quantity }}" required>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Đơn Giá <span class="text-danger">*</span></label>
+                            <input type="number" step="any" class="form-control" name="unit_price" value="{{ p.unit_price }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Ngày SC Nhận Phiếu YC</label>
+                            <input type="date" class="form-control" name="sc_received_date" value="{{ p.sc_received_date.strftime('%Y-%m-%d') if p.sc_received_date else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Ngày Dự Kiến Hàng Về</label>
+                            <input type="date" class="form-control" name="expected_date" value="{{ p.expected_date.strftime('%Y-%m-%d') if p.expected_date else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Ngày Nhận Thực Tế</label>
+                            <input type="date" class="form-control" name="received_date" value="{{ p.received_date.strftime('%Y-%m-%d') if p.received_date else '' }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Trạng Thái</label>
+                            <select class="form-select" name="status">
+                                <option value="Chưa nhận" {% if p.status == 'Chưa nhận' %}selected{% endif %}>Chưa nhận</option>
+                                <option value="Nhận 1 phần" {% if p.status == 'Nhận 1 phần' %}selected{% endif %}>Nhận 1 phần</option>
+                                <option value="Đã giao" {% if p.status == 'Đã giao' %}selected{% endif %}>Đã giao</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Đánh Giá Vật Tư</label>
+                            <input type="text" class="form-control" name="evaluation" value="{{ p.evaluation or 'chưa' }}">
+                        </div>
                     </div>
 
                     <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('list_purchases') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-1"></i> Quay lại
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i> Lưu thay đổi
-                        </button>
+                        <a href="{{ url_for('list_purchases') }}" class="btn btn-secondary">Quay Lại</a>
+                        <button type="submit" class="btn btn-warning">Cập Nhật Đơn Hàng</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    <!-- Bootstrap 5 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

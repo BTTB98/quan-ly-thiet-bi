@@ -16,7 +16,7 @@
             <a class="navbar-brand" href="{{ url_for('index') }}"><i class="fas fa-home me-2"></i>Quản Lý Đơn Mua Hàng</a>
             <div class="d-flex align-items-center">
                 <span class="text-light me-3">
-                    Xin chào, <strong>{{ session.get('username') }}</strong>
+                    Xin chào, <strong>{{ session.get('username') }}</strong> (Vai trò: <em>{{ session.get('role') }}</em>)
                 </span>
                 <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Đăng xuất</a>
             </div>
@@ -30,14 +30,17 @@
                 <h2><i class="fas fa-list-alt me-2"></i>Danh Sách Đơn Mua Hàng & Vật Tư</h2>
             </div>
             <div class="col-md-6 text-md-end">
-                {% if session.get('role') == 'admin' %}
+                {% if session.get('role') in ['admin', 'editor'] %}
                 <a href="{{ url_for('add_purchase') }}" class="btn btn-success me-2">
                     <i class="fas fa-plus-circle me-1"></i> Thêm Đơn Hàng Mới
                 </a>
                 {% endif %}
+                
+                {% if session.get('role') != 'editor' %}
                 <a href="{{ url_for('export_purchases_excel') }}" class="btn btn-primary">
                     <i class="fas fa-file-excel me-1"></i> Xuất Excel
                 </a>
+                {% endif %}
             </div>
         </div>
 
@@ -101,7 +104,7 @@
                                 <th>Trạng thái</th>
                                 <th>Ngày nhận thực tế</th>
                                 <th>Đánh giá</th>
-                                {% if session.get('role') == 'admin' %}
+                                {% if session.get('role') in ['admin', 'editor'] %}
                                 <th>Hành động</th>
                                 {% endif %}
                             </tr>
@@ -139,7 +142,7 @@
                                     </td>
                                     <td>{{ p.received_date }}</td>
                                     <td>{{ p.evaluation }}</td>
-                                    {% if session.get('role') == 'admin' %}
+                                    {% if session.get('role') in ['admin', 'editor'] %}
                                     <td>
                                         <a href="{{ url_for('edit_purchase', id=p.id) }}" class="btn btn-warning btn-sm" title="Chỉnh sửa">
                                             <i class="fas fa-edit"></i>

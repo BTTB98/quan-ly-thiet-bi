@@ -117,6 +117,15 @@ def list_purchases():
     for p in purchases_query:
         current_status = calculate_status(p)
         
+        # Mặc định nếu không chọn bộ lọc trạng thái, chỉ hiển thị 'Chưa nhận' và 'Trễ hẹn'
+        if not status_filter:
+            if current_status not in ['Chưa nhận', 'Trễ hẹn']:
+                continue
+        else:
+            # Nếu người dùng chủ động chọn bộ lọc trạng thái cụ thể
+            if current_status != status_filter:
+                continue
+        
         rec_date_str = p.received_date.strftime('%d/%m/%Y') if p.received_date else ''
         exp_date_str = p.expected_date.strftime('%d/%m/%Y') if p.expected_date else ''
         sc_date_str = p.sc_received_date.strftime('%d/%m/%Y') if p.sc_received_date else ''
@@ -139,9 +148,6 @@ def list_purchases():
             'received_date': rec_date_str,
             'evaluation': p.evaluation or '',
         }
-        
-        if status_filter and p_dict['status'] != status_filter:
-            continue
             
         if search_query:
             combined_text = (
@@ -244,7 +250,7 @@ def edit_purchase(id):
 
 @app.route('/purchases/export')
 def export_purchases_excel():
-    if 'user_id' not in session or session.get('role') == 'editor':
+    if 'user_id' not in session or session.get('role'] == 'editor':
         flash('Bạn không có quyền tải file Excel!', 'danger')
         return redirect(url_for('list_purchases'))
     

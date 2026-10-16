@@ -67,14 +67,15 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <select name="status" class="form-select">
-                            <option value="">-- Tất cả trạng thái --</option>
-                            <option value="Đã giao" {% if status_filter == 'Đã giao' %}selected{% endif %}>Đã giao</option>
-                            <option value="Nhận 1 phần" {% if status_filter == 'Nhận 1 phần' %}selected{% endif %}>Nhận 1 phần</option>
-                            <option value="Trễ hẹn" {% if status_filter == 'Trễ hẹn' %}selected{% endif %}>Trễ hẹn</option>
-                            <option value="Chưa nhận" {% if status_filter == 'Chưa nhận' %}selected{% endif %}>Chưa nhận</option>
-                        </select>
-                    </div>
+    <select name="status" class="form-select">
+        <option value="" {% if status_filter == '' %}selected{% endif %}>-- Mặc định (Chưa nhận & Trễ hẹn) --</option>
+        <option value="ALL" {% if status_filter == 'ALL' %}selected{% endif %}>-- Tất cả trạng thái --</option>
+        <option value="Đã giao" {% if status_filter == 'Đã giao' %}selected{% endif %}>Đã giao</option>
+        <option value="Nhận 1 phần" {% if status_filter == 'Nhận 1 phần' %}selected{% endif %}>Nhận 1 phần</option>
+        <option value="Trễ hẹn" {% if status_filter == 'Trễ hẹn' %}selected{% endif %}>Trễ hẹn</option>
+        <option value="Chưa nhận" {% if status_filter == 'Chưa nhận' %}selected{% endif %}>Chưa nhận</option>
+    </select>
+</div>
                     <div class="col-md-2 d-grid">
                         <button type="submit" class="btn btn-dark"><i class="fas fa-filter me-1"></i> Lọc kết quả</button>
                     </div>

@@ -28,15 +28,15 @@ class Purchase(db.Model):
     __tablename__ = 'purchases'
     id = db.Column(db.Integer, primary_key=True)
     cost_code = db.Column(db.String(100))
-    requester = db.Column(db.String(100))  # Cột mới: Người yêu cầu (chỉ lưu DB)
-    purpose = db.Column(db.Text)            # Mục đích (chỉ lưu DB, không hiện ở bảng chính)
+    requester = db.Column(db.String(100))  # Người yêu cầu (chỉ lưu DB)
+    purpose = db.Column(db.Text)            # Mục đích (chỉ lưu DB)
     item_code = db.Column(db.String(100))
     item_name = db.Column(db.Text, nullable=False)
     po_number = db.Column(db.String(100), nullable=False)
-    supplier = db.Column(db.String(255), nullable=True)
+    supplier = db.Column(db.String(255), nullable=True)  # Cho phép bỏ trống
     unit = db.Column(db.String(50))
     quantity = db.Column(db.Integer, nullable=False)
-    unit_price = db.Column(db.Numeric(15, 2), nullable=True)
+    unit_price = db.Column(db.Numeric(15, 2), nullable=True)  # Cho phép bỏ trống
     sc_received_date = db.Column(db.Date)
     expected_date = db.Column(db.Date)
     received_date = db.Column(db.Date)
@@ -53,7 +53,7 @@ USERS_DB = [
     },
     {
         'id': 2,
-        'username': 'Huyen',
+        'username': 'ketoan',
         'password': generate_password_hash('123456'),
         'role': 'editor',  # Thêm đơn, sửa ngày dự kiến, không sửa cái khác, không tải Excel
     },
@@ -117,6 +117,10 @@ def list_purchases():
     for p in purchases_query:
         current_status = calculate_status(p)
         
+        rec_date_str = p.received_date.strftime('%d/%m/%Y') if p.received_date else ''
+        exp_date_str = p.expected_date.strftime('%d/%m/%Y') if p.expected_date else ''
+        sc_date_str = p.sc_received_date.strftime('%d/%m/%Y') if p.sc_received_date else ''
+        
         p_dict = {
             'id': p.id,
             'cost_code': p.cost_code or '',
@@ -129,10 +133,10 @@ def list_purchases():
             'unit': p.unit or '',
             'quantity': p.quantity or 0,
             'unit_price': float(p.unit_price) if p.unit_price else 0,
-            'sc_received_date': p.sc_received_date.strftime('%d/%m/%Y') if p.sc_received_date else '',
-            'expected_date': p.expected_date.strftime('%d/%m/%Y') if p.expected_date else '',
+            'sc_received_date': sc_date_str,
+            'expected_date': exp_date_str,
             'status': current_status,
-            'received_date': p.received_date.strftime('%d/%m/%Y') if p.received_date else '',
+            'received_date': rec_date_str,
             'evaluation': p.evaluation or '',
         }
         
@@ -142,7 +146,8 @@ def list_purchases():
         if search_query:
             combined_text = (
                 f"{p_dict['item_code']} {p_dict['item_name']} {p_dict['cost_code']} "
-                f"{p_dict['requester']} {p_dict['purpose']} {p_dict['po_number']} {p_dict['supplier']}"
+                f"{p_dict['requester']} {p_dict['purpose']} {p_dict['po_number']} {p_dict['supplier']} "
+                f"{p_dict['received_date']} {p_dict['expected_date']}"
             ).lower()
             if search_query not in combined_text:
                 continue
@@ -170,7 +175,7 @@ def add_purchase():
             rec_date = datetime.strptime(request.form['received_date'], '%Y-%m-%d').date() if request.form.get('received_date') else None
             
             unit_price_val = float(request.form['unit_price']) if request.form.get('unit_price') else 0.0
-            supplier_val = request.form.get('supplier', '').strip() or None
+            supplier_val = request.form.get('supplier', '').strip()
             
             new_p = Purchase(
                 cost_code=request.form.get('cost_code', ''),
@@ -217,7 +222,7 @@ def edit_purchase(id):
                 p.item_code = request.form.get('item_code', '')
                 p.item_name = request.form['item_name']
                 p.po_number = request.form['po_number']
-                p.supplier = request.form.get('supplier', '').strip() or None
+                p.supplier = request.form.get('supplier', '').strip()
                 p.unit = request.form.get('unit', '')
                 p.quantity = int(request.form['quantity'])
                 p.unit_price = float(request.form['unit_price']) if request.form.get('unit_price') else 0.0

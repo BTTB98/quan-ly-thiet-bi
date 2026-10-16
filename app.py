@@ -250,7 +250,7 @@ def edit_purchase(id):
 
 @app.route('/purchases/export')
 def export_purchases_excel():
-    if 'user_id' not in session or session.get('role'] == 'editor':
+    if 'user_id' not in session or session.get('role') == 'editor':
         flash('Bạn không có quyền tải file Excel!', 'danger')
         return redirect(url_for('list_purchases'))
     

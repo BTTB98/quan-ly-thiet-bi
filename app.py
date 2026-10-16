@@ -117,12 +117,16 @@ def list_purchases():
     for p in purchases_query:
         current_status = calculate_status(p)
         
-        # Mặc định nếu không chọn bộ lọc trạng thái, chỉ hiển thị 'Chưa nhận' và 'Trễ hẹn'
-        if not status_filter:
+        # LOGIC LỌC TRẠNG THÁI:
+        if status_filter == '':
+            # Nếu người dùng chưa chọn bộ lọc (mặc định), chỉ hiển thị 'Chưa nhận' và 'Trễ hẹn'
             if current_status not in ['Chưa nhận', 'Trễ hẹn']:
                 continue
+        elif status_filter == 'ALL':
+            # Nếu chọn một tùy chọn "Tất cả", hiển thị tất cả trạng thái (không bỏ qua dòng nào)
+            pass
         else:
-            # Nếu người dùng chủ động chọn bộ lọc trạng thái cụ thể
+            # Nếu chọn một trạng thái cụ thể (Ví dụ: 'Đã giao', 'Nhận 1 phần'...)
             if current_status != status_filter:
                 continue
         
